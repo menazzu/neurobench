@@ -126,7 +126,7 @@ const AdminApp = (() => {
                         <span class="text-white font-bold">${m.name}</span>
                         <span class="text-gray-400 ml-2 text-xs">${variantLabel}</span>
                         ${m.author ? `<span class="text-gray-500 ml-2 text-xs">${m.author}</span>` : ''}
-                        <span class="text-xs text-gray-500 block mt-1">Промпт: ${promptInfo} | Балл: ${bestScore}</span>
+                        <span class="text-xs text-gray-500 block mt-1">Промпт: ${promptInfo} | Балл: ${bestScore}${m.svg_content ? ' | SVG ✓' : ''}</span>
                     </div>
                     <div class="flex-shrink-0 flex gap-2">
                         <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editModel(${m.id})">Ред.</button>
@@ -184,12 +184,40 @@ const AdminApp = (() => {
                             class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
                     </div>
                 </div>
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs uppercase tracking-widest text-gray-400">SVG результат</span>
+                    <div class="flex gap-2">
+                        <input type="file" id="svg-file-input" accept=".svg" class="text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:border file:border-white/20 file:bg-white/5 file:text-white file:text-xs file:uppercase file:tracking-widest file:cursor-pointer">
+                        <button type="button" id="svg-paste-btn" class="text-[10px] uppercase tracking-widest border border-white/20 px-3 py-2 bg-white/5 hover:bg-white/10 transition-colors">Вставить код</button>
+                    </div>
+                    <textarea name="svg_content" id="svg-content-area" rows="4" placeholder="SVG-код или загрузите файл..." style="display:none"
+                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y font-mono text-xs"></textarea>
+                </label>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Сохранить</button>
                     <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
                 </div>
             </form>
         `);
+
+        const svgFileInput = document.getElementById('svg-file-input');
+        const svgContentArea = document.getElementById('svg-content-area');
+        const svgPasteBtn = document.getElementById('svg-paste-btn');
+
+        svgPasteBtn.addEventListener('click', () => {
+            svgContentArea.style.display = svgContentArea.style.display === 'none' ? '' : 'none';
+        });
+
+        svgFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                svgContentArea.value = ev.target.result;
+                svgContentArea.style.display = '';
+            };
+            reader.readAsText(file);
+        });
 
         document.getElementById('model-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -210,15 +238,8 @@ const AdminApp = (() => {
                     scores,
                     overall: parseFloat(overall.toFixed(1))
                 }],
-                best_overall: parseFloat(overall.toFixed(1))
-            };
-            try {
-                await Api.addModel(model);
-                await loadModels();
-                hideModal();
-            } catch (err) {
-                alert('Ошибка сохранения: ' + err.message);
-            }
+                    best_overall: parseFloat(overall.toFixed(1)),
+                    svg_content: document.getElementById('svg-content-area-edit').value || null
         });
     }
 
@@ -311,12 +332,40 @@ const AdminApp = (() => {
                             class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">`).join('')}
                     </div>
                 </div>
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs uppercase tracking-widest text-gray-400">SVG результат</span>
+                    <div class="flex gap-2">
+                        <input type="file" id="svg-file-input-edit" accept=".svg" class="text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:border file:border-white/20 file:bg-white/5 file:text-white file:text-xs file:uppercase file:tracking-widest file:cursor-pointer">
+                        <button type="button" id="svg-paste-btn-edit" class="text-[10px] uppercase tracking-widest border border-white/20 px-3 py-2 bg-white/5 hover:bg-white/10 transition-colors">Вставить код</button>
+                    </div>
+                    <textarea name="svg_content" id="svg-content-area-edit" rows="4" placeholder="SVG-код или загрузите файл..." style="${model.svg_content ? '' : 'display:none'}"
+                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y font-mono text-xs">${model.svg_content || ''}</textarea>
+                </label>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Обновить</button>
                     <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
                 </div>
             </form>
         `);
+
+        const svgFileInputEdit = document.getElementById('svg-file-input-edit');
+        const svgContentAreaEdit = document.getElementById('svg-content-area-edit');
+        const svgPasteBtnEdit = document.getElementById('svg-paste-btn-edit');
+
+        svgPasteBtnEdit.addEventListener('click', () => {
+            svgContentAreaEdit.style.display = svgContentAreaEdit.style.display === 'none' ? '' : 'none';
+        });
+
+        svgFileInputEdit.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                svgContentAreaEdit.value = ev.target.result;
+                svgContentAreaEdit.style.display = '';
+            };
+            reader.readAsText(file);
+        });
 
         document.getElementById('model-edit-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -334,7 +383,8 @@ const AdminApp = (() => {
                         scores,
                         overall: parseFloat(overall.toFixed(1))
                     }],
-                    best_overall: parseFloat(overall.toFixed(1))
+                    best_overall: parseFloat(overall.toFixed(1)),
+                    svg_content: document.getElementById('svg-content-area-edit').value || null
                 });
                 await loadModels();
                 hideModal();
