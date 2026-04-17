@@ -15,24 +15,28 @@ const Api = (() => {
         getClient();
     }
 
-    async function getModels() {
+    async function getPromptsByDifficulty(difficulty) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.from('models').select('*').order('best_overall', { ascending: false });
+        const { data, error } = await client.from('prompts').select('*').eq('difficulty', difficulty).order('id');
         if (error) throw error;
         return data;
     }
 
-    async function getPrompts() {
+    async function getAllPrompts() {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
         const { data, error } = await client.from('prompts').select('*').order('id');
         if (error) throw error;
-        const grouped = { easy: [], medium: [], hard: [] };
-        data.forEach(p => {
-            if (grouped[p.difficulty]) grouped[p.difficulty].push(p.text);
-        });
-        return grouped;
+        return data;
+    }
+
+    async function getModelsByPrompt(promptId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('models').select('*').eq('prompt_id', promptId).order('best_overall', { ascending: false });
+        if (error) throw error;
+        return data;
     }
 
     async function addModel(model) {
@@ -111,5 +115,5 @@ const Api = (() => {
         return !!data;
     }
 
-    return { getModels, getPrompts, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient };
+    return { getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient };
 })();

@@ -115,38 +115,34 @@
     <main class="max-w-7xl mx-auto px-4 py-16 relative z-10 text-white font-mono w-full mt-auto mb-20">
         
         <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-white/20 pb-6 gap-6">
-            <div>
-                <div class="flex items-center gap-4">
-                    <h2 class="main-tab active font-title text-3xl md:text-5xl uppercase tracking-widest glitch" data-tab="leaderboard" data-text="Лидерборд">Лидерборд</h2>
-                    <h2 class="main-tab font-title text-3xl md:text-5xl uppercase tracking-widest glitch" data-tab="prompts" data-text="Промпты">Промпты</h2>
-                </div>
-                <a href="https://t.me/codercodex" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mt-3 text-gray-400 hover:text-white transition-colors duration-300 group" style="text-decoration: none;">
+            <div class="flex-1">
+                <h2 class="font-title text-3xl md:text-5xl uppercase tracking-widest glitch gradient-text mb-4" data-text="Лидерборд">Лидерборд</h2>
+                <a href="https://t.me/codercodex" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mb-5 text-gray-400 hover:text-white transition-colors duration-300 group" style="text-decoration: none;">
                     <svg class="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                     <span class="text-sm tracking-[0.2em] uppercase font-mono">@codercodex</span>
                 </a>
-                <div id="leaderboard-filters" class="flex flex-wrap gap-2 mt-5">
-                    <button class="top-filter-btn active" data-count="all">Все</button>
-                    <button class="top-filter-btn" data-count="3">Топ 3</button>
-                    <button class="top-filter-btn" data-count="5">Топ 5</button>
-                    <button class="top-filter-btn" data-count="10">Топ 10</button>
-                </div>
-                <div id="prompts-filters" class="flex flex-wrap gap-2 mt-5" style="display:none;">
-                    <button class="difficulty-tab active" data-difficulty="easy">Лёгкие</button>
-                    <button class="difficulty-tab" data-difficulty="medium">Средние</button>
-                    <button class="difficulty-tab" data-difficulty="hard">Сложные</button>
+                <div class="flex flex-col gap-4">
+                    <div id="difficulty-filters" class="flex flex-wrap gap-2"></div>
+                    <div id="prompt-filters" class="flex flex-wrap gap-2"></div>
+                    <div id="top-filters" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
-            <div class="text-left md:text-right bg-white/10 px-6 py-3 border border-white/20">
+            <div class="text-left md:text-right bg-white/10 px-6 py-3 border border-white/20 flex-shrink-0">
                 <p class="text-[10px] text-gray-400 tracking-[0.1em] uppercase mb-1">Максимум баллов</p>
                 <p class="font-title text-4xl font-bold text-white">90.0</p>
             </div>
         </div>
 
-        <div id="prompts-panel" class="tab-content hidden mb-10">
-            <div class="flex flex-col gap-3" id="prompts-content"></div>
+        <div id="prompt-display" class="mb-8 hidden">
+            <div class="glass-panel p-6 border border-white/20">
+                <p class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-3">Промпт</p>
+                <p id="prompt-text" class="text-sm text-gray-300 leading-relaxed"></p>
+            </div>
         </div>
 
-        <div id="benchmark-list" class="tab-content flex flex-col gap-8"></div>
+        <div id="benchmark-list" class="flex flex-col gap-8"></div>
+
+        <div id="empty-state" class="empty-state hidden">Выберите промпт</div>
 
     </main>
 
@@ -154,7 +150,6 @@
     <script src="js/api.js"></script>
     <script src="js/shader.js"></script>
     <script src="js/leaderboard.js"></script>
-    <script src="js/prompts.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
