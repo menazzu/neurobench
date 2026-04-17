@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroBench | Generative Op-Art Evaluation</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['"Space Mono"', 'monospace'],
+                        title: ['"Syncopate"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <canvas id="glcanvas"></canvas>
+
+    <div class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-50 pointer-events-none font-mono text-xs tracking-widest uppercase">
+        <div class="logo-badge">
+            <span class="glitch gradient-text font-title font-bold text-base" data-text="NeuroBench">NeuroBench</span>
+        </div>
+    </div>
+
+    <header class="min-h-[70vh] flex flex-col justify-center items-center text-center px-4 relative z-10">
+        <h1 class="font-title text-6xl md:text-8xl lg:text-9xl font-bold uppercase tracking-tighter mix-blend-difference mb-6 title-glow">
+            Neuro<br>Bench
+        </h1>
+        <p class="font-mono text-xs md:text-sm tracking-[0.3em] uppercase text-gray-300 border border-gray-500 px-6 py-3 bg-black/50 backdrop-blur-sm">
+            Generative Line Art Evaluation
+        </p>
+    </header>
+
+    <div class="relative z-10 w-full overflow-hidden bg-black/70 border-y border-white/20 py-4 mb-20 backdrop-blur-md">
+        <div class="marquee-track flex gap-8 items-center text-xs tracking-[0.2em] uppercase font-mono text-gray-400">
+            <span>op-art line distortion</span> <span class="text-white/30">✦</span>
+            <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
+            <span>contour warp</span> <span class="text-white/30">✦</span>
+            <span>radial guilloché</span> <span class="text-white/30">✦</span>
+            <span>hypnotic spiral op-art</span> <span class="text-white/30">✦</span>
+            <span>concentric line pattern</span> <span class="text-white/30">✦</span>
+            <span>contour hatching</span> <span class="text-white/30">✦</span>
+            <span>engraving style</span> <span class="text-white/30">✦</span>
+            <span>op-art line distortion</span> <span class="text-white/30">✦</span>
+            <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
+            <span>contour warp</span> <span class="text-white/30">✦</span>
+            <span>radial guilloché</span> <span class="text-white/30">✦</span>
+            <span>hypnotic spiral op-art</span> <span class="text-white/30">✦</span>
+            <span>concentric line pattern</span> <span class="text-white/30">✦</span>
+            <span>contour hatching</span> <span class="text-white/30">✦</span>
+            <span>engraving style</span> <span class="text-white/30">✦</span>
+        </div>
+    </div>
+
+    <section class="max-w-7xl mx-auto px-4 py-8 relative z-10 text-white font-mono mb-24">
+        <h2 class="font-title text-3xl md:text-4xl uppercase tracking-widest mb-12 border-b border-white/20 pb-4 text-center md:text-left title-glow">Что проверяют SVG?</h2>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            
+            <div class="glass-panel p-8 md:p-12 border border-white/20 flex flex-col gap-10">
+                <div>
+                    <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">1.</span> Истинное воображение (Zero Data Contamination)</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Проверка на SE(2) инвариантность (повороты и сдвиги). При повороте все координаты кардинально меняются, исключая возможность «зубрежки». Успех строго доказывает, что модель оперирует внутренним пониманием пространства и топологии объектов, а не просто копирует шаблоны.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">2.</span> Аудит математической логики</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">В отличие от легко прощаемого текста, малейшая ошибка в цифре SVG-координаты мгновенно рушит контур. Генерация графики требует точных алгебраических вычислений, что беспощадно разоблачает поверхностную «иллюзию рассуждения» (pattern matching) современных LLM.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">3.</span> Преодоление пиксельных генераторов</h3>
+                    <p class="text-sm text-gray-400 leading-relaxed">Нейросети вроде Midjourney отлично генерируют текстуры через вероятностные пиксели, но проваливают точный инженерный структурный подсчет. SVG требует строгого, детерминированного планирования связей, узлов и соблюдения точной DOM-иерархии.</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-10">
+                <div class="glass-panel p-8 md:p-12 border border-white/20 flex-grow flex flex-col gap-10">
+                    <div>
+                        <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">4.</span> Прокачка общего интеллекта (Symbolic Tuning)</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">Обучение ИИ на строгих графах и точных координатах парадоксально улучшает логику даже в сферах, не связанных с графикой. Это дает скачкообразный рост метрик на математических бенчмарках (GSM8K) и устраняет слепые пятна бестелесного восприятия ИИ.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">5.</span> Валидация строгого исполняемого кода</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">SVG — это XML-разметка с жестким синтаксисом. Успех доказывает способность модели выдавать безупречный структурированный код для UI/UX. Это делает логику "зрения" ИИ полностью прозрачной, интерпретируемой и применимой для автоматизации frontend-разработки.</p>
+                    </div>
+                </div>
+                
+                <div class="glass-panel p-8 border border-white/20 bg-white/5 relative overflow-hidden group">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    </div>
+                    <h3 class="text-xs font-bold uppercase tracking-[0.2em] mb-2 text-white/50">Суть метода</h3>
+                    <p class="text-sm text-gray-300 uppercase tracking-widest leading-loose">SVG — это мост между текстовой LLM генерацией и физическим конструированием визуального мира.</p>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-4 py-16 relative z-10 text-white font-mono w-full mt-auto mb-20">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-white/20 pb-6 gap-6">
+            <div>
+                <div class="flex items-center gap-4">
+                    <h2 class="main-tab active font-title text-3xl md:text-5xl uppercase tracking-widest glitch" data-tab="leaderboard" data-text="Лидерборд">Лидерборд</h2>
+                    <h2 class="main-tab font-title text-3xl md:text-5xl uppercase tracking-widest glitch" data-tab="prompts" data-text="Промпты">Промпты</h2>
+                </div>
+                <a href="https://t.me/codercodex" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mt-3 text-gray-400 hover:text-white transition-colors duration-300 group" style="text-decoration: none;">
+                    <svg class="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                    <span class="text-sm tracking-[0.2em] uppercase font-mono">@codercodex</span>
+                </a>
+                <div id="leaderboard-filters" class="flex flex-wrap gap-2 mt-5">
+                    <button class="top-filter-btn active" data-count="all">Все</button>
+                    <button class="top-filter-btn" data-count="3">Топ 3</button>
+                    <button class="top-filter-btn" data-count="5">Топ 5</button>
+                    <button class="top-filter-btn" data-count="10">Топ 10</button>
+                </div>
+                <div id="prompts-filters" class="flex flex-wrap gap-2 mt-5" style="display:none;">
+                    <button class="difficulty-tab active" data-difficulty="easy">Лёгкие</button>
+                    <button class="difficulty-tab" data-difficulty="medium">Средние</button>
+                    <button class="difficulty-tab" data-difficulty="hard">Сложные</button>
+                </div>
+            </div>
+            <div class="text-left md:text-right bg-white/10 px-6 py-3 border border-white/20">
+                <p class="text-[10px] text-gray-400 tracking-[0.1em] uppercase mb-1">Максимум баллов</p>
+                <p class="font-title text-4xl font-bold text-white">90.0</p>
+            </div>
+        </div>
+
+        <div id="prompts-panel" class="tab-content hidden mb-10">
+            <div class="flex flex-col gap-3" id="prompts-content"></div>
+        </div>
+
+        <div id="benchmark-list" class="tab-content flex flex-col gap-8"></div>
+
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/shader.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/prompts.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

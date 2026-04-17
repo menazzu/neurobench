@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroBench | Admin Panel</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['"Space Mono"', 'monospace'],
+                        title: ['"Syncopate"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="bg-[#050505] text-white antialiased min-h-screen font-mono">
+
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center">
+        <div class="w-full max-w-sm p-8 border border-white/20 bg-black/80">
+            <h1 class="font-title text-2xl uppercase tracking-widest text-center mb-8">NeuroBench Admin</h1>
+            <form id="login-form" class="flex flex-col gap-4">
+                <input type="email" id="login-email" placeholder="Email" required
+                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 transition-colors">
+                <input type="password" id="login-password" placeholder="Password" required
+                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 transition-colors">
+                <button type="submit"
+                    class="w-full bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">
+                    Войти
+                </button>
+                <p id="login-error" class="text-red-400 text-xs text-center hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="admin-screen" class="hidden min-h-screen">
+        <nav class="border-b border-white/20 px-6 py-4 flex justify-between items-center bg-black/80">
+            <h1 class="font-title text-lg uppercase tracking-widest">NeuroBench Admin</h1>
+            <div class="flex items-center gap-4">
+                <span id="admin-email" class="text-xs text-gray-400"></span>
+                <button id="logout-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors">Выйти</button>
+            </div>
+        </nav>
+
+        <div class="flex">
+            <aside class="w-56 min-h-[calc(100vh-56px)] border-r border-white/20 p-4 flex flex-col gap-2">
+                <button class="admin-nav-btn active" data-section="models">Модели</button>
+                <button class="admin-nav-btn" data-section="prompts">Промпты</button>
+
+            </aside>
+
+            <main class="flex-1 p-8 max-w-6xl">
+
+                <section id="section-models" class="admin-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-title text-xl uppercase tracking-widest">Модели</h2>
+                        <button id="add-model-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors">+ Добавить</button>
+                    </div>
+                    <div id="models-table-wrapper" class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="border-b border-white/20 text-gray-400 uppercase tracking-widest">
+                                    <th class="py-3 text-left px-2">#</th>
+                                    <th class="py-3 text-left px-2">Название</th>
+                                    <th class="py-3 text-left px-2">Автор</th>
+                                    <th class="py-3 text-left px-2">Лучший балл</th>
+                                    <th class="py-3 text-right px-2">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="models-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="section-prompts" class="admin-section hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-title text-xl uppercase tracking-widest">Промпты</h2>
+                        <button id="add-prompt-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors">+ Добавить</button>
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <button class="admin-difficulty-btn active" data-diff="easy">Лёгкие</button>
+                        <button class="admin-difficulty-btn" data-diff="medium">Средние</button>
+                        <button class="admin-difficulty-btn" data-diff="hard">Сложные</button>
+                    </div>
+                    <div id="prompts-list" class="flex flex-col gap-3"></div>
+                </section>
+
+
+
+            </main>
+        </div>
+
+        <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+            <div id="modal-content" class="w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/20 bg-[#0A0A0A] p-8 custom-scrollbar">
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
