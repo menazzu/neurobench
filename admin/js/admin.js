@@ -1,8 +1,8 @@
 const AdminApp = (() => {
-    let currentSection = 'models';
+    let currentSection = 'prompts';
     let currentDifficulty = 'easy';
     let modelsData = [];
-    let promptsData = [];
+    let allPromptsData = [];
 
     function showModal(html) {
         document.getElementById('modal-content').innerHTML = html;
@@ -48,75 +48,128 @@ const AdminApp = (() => {
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('admin-screen').classList.remove('hidden');
         document.getElementById('admin-email').textContent = email || '';
-        loadModels();
         loadPrompts();
-    }
-
-    async function loadModels() {
-        try {
-            modelsData = await Api.getModels();
-        } catch {
-            modelsData = [];
-        }
-        renderModelsTable();
-    }
-
-    function renderModelsTable() {
-        const tbody = document.getElementById('models-tbody');
-        tbody.innerHTML = modelsData.map((m, i) => `
-            <tr class="border-b border-white/10 hover:bg-white/5 transition-colors">
-                <td class="py-3 px-2 text-gray-500">${i + 1}</td>
-                <td class="py-3 px-2 text-white">${m.name || ''}</td>
-                <td class="py-3 px-2 text-gray-400">${m.author || '—'}</td>
-                <td class="py-3 px-2 text-white font-bold">${m.best_overall || m.bestOverall || '—'}</td>
-                <td class="py-3 px-2 text-right">
-                    <button class="text-gray-400 hover:text-white transition-colors mr-3" onclick="AdminApp.editModel(${m.id || i})">Ред.</button>
-                    <button class="text-red-400/60 hover:text-red-400 transition-colors" onclick="AdminApp.deleteModel(${m.id || i})">Удал.</button>
-                </td>
-            </tr>
-        `).join('');
+        loadModels();
     }
 
     async function loadPrompts() {
         try {
-            promptsData = await Api.getPrompts();
+            allPromptsData = await Api.getAllPrompts();
         } catch {
-            promptsData = { easy: [], medium: [], hard: [] };
+            allPromptsData = [];
         }
         renderPromptsList();
+        renderModelsPromptFilter();
+    }
+
+    function getPromptsByDiff(diff) {
+        return allPromptsData.filter(p => p.difficulty === diff);
     }
 
     function renderPromptsList() {
         const container = document.getElementById('prompts-list');
-        const prompts = promptsData[currentDifficulty] || [];
+        const prompts = getPromptsByDiff(currentDifficulty);
         if (prompts.length === 0) {
             container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет промптов</p>';
             return;
         }
         container.innerHTML = prompts.map((p, i) => `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
-                <span class="flex-1">${typeof p === 'string' ? p : p.text}</span>
+                <div class="flex-1">
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Промпт #${i + 1} (id: ${p.id})</span>
+                    <span class="text-sm text-gray-300 leading-relaxed">${p.text}</span>
+                </div>
                 <div class="flex-shrink-0 flex gap-2">
-                    <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editPrompt(${i})">Ред.</button>
-                    <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deletePrompt(${i})">Удал.</button>
+                    <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editPrompt(${p.id})">Ред.</button>
+                    <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deletePrompt(${p.id})">Удал.</button>
                 </div>
             </div>
         `).join('');
     }
 
-    function showAddModelForm() {
+    async function loadModels() {
+        try {
+            modelsData = await Api.getAllModels();
+        } catch {
+            modelsData = [];
+        }
+        renderModelsList();
+    }
+
+    function renderModelsPromptFilter() {
+        const select = document.getElementById('models-prompt-filter');
+        select.innerHTML = '<option value="all">Все</option>';
+        allPromptsData.forEach(p => {
+            const shortText = p.text.length > 60 ? p.text.substring(0, 60) + '...' : p.text;
+            const diffLabel = p.difficulty === 'easy' ? 'Лёгкий' : p.difficulty === 'medium' ? 'Средний' : 'Сложный';
+            select.innerHTML += `<option value="${p.id}">#${p.id} [${diffLabel}] ${shortText}</option>`;
+        });
+    }
+
+    function renderModelsList() {
+        const filterVal = document.getElementById('models-prompt-filter').value;
+        const filtered = filterVal === 'all' ? modelsData : modelsData.filter(m => m.prompt_id === parseInt(filterVal));
+
+        const container = document.getElementById('models-list');
+        if (filtered.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет моделей</p>';
+            return;
+        }
+        container.innerHTML = filtered.map((m, i) => {
+            const promptInfo = m.prompts ? `[${m.prompts.difficulty}] #${m.prompts.id}` : `prompt #${m.prompt_id}`;
+            const variants = m.variants || [];
+            const variantLabel = variants.length > 0 ? variants[0].label : '—';
+            const bestScore = m.best_overall || '—';
+            return `
+                <div class="admin-prompt-card flex justify-between items-start gap-4">
+                    <div class="flex-1">
+                        <span class="text-white font-bold">${m.name}</span>
+                        <span class="text-gray-400 ml-2 text-xs">${variantLabel}</span>
+                        ${m.author ? `<span class="text-gray-500 ml-2 text-xs">${m.author}</span>` : ''}
+                        <span class="text-xs text-gray-500 block mt-1">Промпт: ${promptInfo} | Балл: ${bestScore}</span>
+                    </div>
+                    <div class="flex-shrink-0 flex gap-2">
+                        <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editModel(${m.id})">Ред.</button>
+                        <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteModel(${m.id})">Удал.</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function showAddModelForm() {
+        if (allPromptsData.length === 0) {
+            alert('Сначала добавьте хотя бы один промпт');
+            return;
+        }
+        const promptsOptions = allPromptsData.map(p => {
+            const diffLabel = p.difficulty === 'easy' ? 'Лёгкий' : p.difficulty === 'medium' ? 'Средний' : 'Сложный';
+            const shortText = p.text.length > 50 ? p.text.substring(0, 50) + '...' : p.text;
+            return `<option value="${p.id}">[${diffLabel}] #${p.id} ${shortText}</option>`;
+        }).join('');
+
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Добавить модель</h3>
             <form id="model-form" class="flex flex-col gap-4">
-                <input name="name" placeholder="Название модели" required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs uppercase tracking-widest text-gray-400">Промпт *</span>
+                    <select name="prompt_id" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                        <option value="">Выберите промпт</option>
+                        ${promptsOptions}
+                    </select>
+                </label>
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs uppercase tracking-widest text-gray-400">Название модели *</span>
+                    <input name="name" placeholder="Gemini 3.1 Pro" required
+                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                </label>
                 <input name="author" placeholder="Автор (опционально)"
                     class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <div class="border border-white/20 p-4">
-                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Вариант</p>
-                    <input name="variant_label" placeholder="Лейбл (напр. Default)" required
+                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Пространство (подмодель)</p>
+                    <input name="space" placeholder="AI Studio, Claude.ai, ChatGPT..." required
                         class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
-                    <input name="variant_date" type="text" placeholder="Дата (напр. 07.06.2026)" required
+                    <input name="test_date" type="text" placeholder="Дата теста (напр. 07.06.2026)" required
                         class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
                     <div class="grid grid-cols-5 gap-2 mt-2">
                         <input name="s0" type="number" step="0.1" min="0" max="10" placeholder="Визуал" required
@@ -148,11 +201,12 @@ const AdminApp = (() => {
             ];
             const overall = (scores.reduce((a, b) => a + b, 0)) * 1.8;
             const model = {
+                prompt_id: parseInt(fd.get('prompt_id')),
                 name: fd.get('name'),
                 author: fd.get('author') || null,
                 variants: [{
-                    label: fd.get('variant_label'),
-                    date: fd.get('variant_date'),
+                    label: fd.get('space'),
+                    date: fd.get('test_date'),
                     scores,
                     overall: parseFloat(overall.toFixed(1))
                 }],
@@ -209,15 +263,12 @@ const AdminApp = (() => {
         }
     }
 
-    async function deletePrompt(idx) {
-        if (!confirm('Удалить промпт?')) return;
-        const prompts = promptsData[currentDifficulty] || [];
-        const p = prompts[idx];
-        if (!p) return;
+    async function deletePrompt(id) {
+        if (!confirm('Удалить промпт? Связанные модели тоже удалятся.')) return;
         try {
-            const id = typeof p === 'object' ? p.id : null;
-            if (id) await Api.deletePrompt(id);
+            await Api.deletePrompt(id);
             await loadPrompts();
+            await loadModels();
         } catch (err) {
             alert('Ошибка удаления: ' + err.message);
         }
@@ -226,14 +277,40 @@ const AdminApp = (() => {
     function editModel(id) {
         const model = modelsData.find(m => m.id === id);
         if (!model) return;
+
+        const promptsOptions = allPromptsData.map(p => {
+            const diffLabel = p.difficulty === 'easy' ? 'Лёгкий' : p.difficulty === 'medium' ? 'Средний' : 'Сложный';
+            const shortText = p.text.length > 50 ? p.text.substring(0, 50) + '...' : p.text;
+            const selected = p.id === model.prompt_id ? 'selected' : '';
+            return `<option value="${p.id}" ${selected}>[${diffLabel}] #${p.id} ${shortText}</option>`;
+        }).join('');
+
+        const firstVariant = (model.variants && model.variants[0]) || {};
+
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать модель</h3>
             <form id="model-edit-form" class="flex flex-col gap-4">
+                <label class="flex flex-col gap-1">
+                    <span class="text-xs uppercase tracking-widest text-gray-400">Промпт *</span>
+                    <select name="prompt_id" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                        ${promptsOptions}
+                    </select>
+                </label>
                 <input name="name" value="${model.name || ''}" placeholder="Название модели" required
                     class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <input name="author" value="${model.author || ''}" placeholder="Автор (опционально)"
                     class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <p class="text-xs uppercase tracking-widest text-gray-400">Варианты и баллы редактируются через Supabase Dashboard</p>
+                <div class="border border-white/20 p-4">
+                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Пространство (подмодель)</p>
+                    <input name="space" value="${firstVariant.label || ''}" placeholder="AI Studio, Claude.ai..." required
+                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
+                    <input name="test_date" type="text" value="${firstVariant.date || ''}" placeholder="Дата теста" required
+                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
+                    <div class="grid grid-cols-5 gap-2 mt-2">
+                        ${[0,1,2,3,4].map(ci => `<input name="s${ci}" type="number" step="0.1" min="0" max="10" value="${firstVariant.scores ? firstVariant.scores[ci] : ''}" placeholder="${['Визуал','Анимация','Креатив','Код','Детали'][ci]}" required
+                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">`).join('')}
+                    </div>
+                </div>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Обновить</button>
                     <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
@@ -244,8 +321,21 @@ const AdminApp = (() => {
         document.getElementById('model-edit-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
+            const scores = [0,1,2,3,4].map(ci => parseFloat(fd.get('s' + ci)));
+            const overall = (scores.reduce((a, b) => a + b, 0)) * 1.8;
             try {
-                await Api.updateModel(id, { name: fd.get('name'), author: fd.get('author') || null });
+                await Api.updateModel(id, {
+                    prompt_id: parseInt(fd.get('prompt_id')),
+                    name: fd.get('name'),
+                    author: fd.get('author') || null,
+                    variants: [{
+                        label: fd.get('space'),
+                        date: fd.get('test_date'),
+                        scores,
+                        overall: parseFloat(overall.toFixed(1))
+                    }],
+                    best_overall: parseFloat(overall.toFixed(1))
+                });
                 await loadModels();
                 hideModal();
             } catch (err) {
@@ -254,17 +344,19 @@ const AdminApp = (() => {
         });
     }
 
-    function editPrompt(idx) {
-        const prompts = promptsData[currentDifficulty] || [];
-        const p = prompts[idx];
-        if (!p) return;
-        const text = typeof p === 'string' ? p : p.text;
-        const id = typeof p === 'object' ? p.id : null;
+    function editPrompt(id) {
+        const prompt = allPromptsData.find(p => p.id === id);
+        if (!prompt) return;
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать промпт</h3>
             <form id="prompt-edit-form" class="flex flex-col gap-4">
+                <select name="difficulty" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                    <option value="easy" ${prompt.difficulty === 'easy' ? 'selected' : ''}>Лёгкий</option>
+                    <option value="medium" ${prompt.difficulty === 'medium' ? 'selected' : ''}>Средний</option>
+                    <option value="hard" ${prompt.difficulty === 'hard' ? 'selected' : ''}>Сложный</option>
+                </select>
                 <textarea name="text" rows="8" required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y">${text}</textarea>
+                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y">${prompt.text}</textarea>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Обновить</button>
                     <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
@@ -276,8 +368,9 @@ const AdminApp = (() => {
             e.preventDefault();
             const fd = new FormData(e.target);
             try {
-                if (id) await Api.updatePrompt(id, { text: fd.get('text'), difficulty: currentDifficulty });
+                await Api.updatePrompt(id, { text: fd.get('text'), difficulty: fd.get('difficulty') });
                 await loadPrompts();
+                await loadModels();
                 hideModal();
             } catch (err) {
                 alert('Ошибка обновления: ' + err.message);
@@ -340,6 +433,10 @@ const AdminApp = (() => {
 
         document.getElementById('modal-overlay').addEventListener('click', (e) => {
             if (e.target.id === 'modal-overlay') hideModal();
+        });
+
+        document.getElementById('models-prompt-filter').addEventListener('change', () => {
+            renderModelsList();
         });
 
         checkAuth();

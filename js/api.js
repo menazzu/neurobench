@@ -39,6 +39,14 @@ const Api = (() => {
         return data;
     }
 
+    async function getAllModels() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('models').select('*, prompts(id, difficulty, text)').order('prompt_id', { ascending: true }).order('best_overall', { ascending: false });
+        if (error) throw error;
+        return data;
+    }
+
     async function addModel(model) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
@@ -115,5 +123,5 @@ const Api = (() => {
         return !!data;
     }
 
-    return { getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient };
+    return { getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient };
 })();
