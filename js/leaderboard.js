@@ -153,22 +153,19 @@ const LeaderboardModule = (() => {
         return d.innerHTML;
     }
 
-    function renderSvgSection(model) {
+    function renderSvgBlock(model) {
         if (!model.svg_content) return '';
         const modelSlug = model.name.replace(/[^a-zA-Z0-9]/g, '_');
         return `
-            <div class="mt-6 lg:mt-8 lg:pl-10 w-full svg-viewer-section">
-                <div class="flex items-center gap-3 mb-3">
-                    <button class="svg-download-btn text-[10px] uppercase tracking-widest border border-white/20 px-4 py-2 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-2 cursor-pointer"
-                        data-model-slug="${escapeHtml(modelSlug)}">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        Скачать SVG
-                    </button>
-                    <span class="text-[10px] uppercase tracking-widest text-gray-500">Результат генерации</span>
+            <div class="mt-4 w-full">
+                <div class="svg-viewer-box border border-white/20 bg-[#0A0A0A] overflow-hidden flex items-center justify-center p-2" style="width:160px;height:160px;">
+                    <div class="svg-render-area w-full h-full flex items-center justify-center"></div>
                 </div>
-                <div class="svg-viewer-box border border-white/20 bg-[#0A0A0A] overflow-auto max-h-[500px] flex items-center justify-center p-4">
-                    <div class="svg-render-area"></div>
-                </div>
+                <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
+                    data-model-slug="${escapeHtml(modelSlug)}">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    SVG
+                </button>
             </div>
         `;
     }
@@ -218,10 +215,10 @@ const LeaderboardModule = (() => {
                 </div>
             `;
 
-            const svgSection = renderSvgSection(model);
+            const svgBlock = renderSvgBlock(model);
 
             const card = document.createElement('div');
-            card.className = "glass-panel p-8 border border-white/20 hover:border-white/50 transition-colors duration-300 flex flex-col gap-0 bg-black/60 benchmark-card group";
+            card.className = "glass-panel p-8 border border-white/20 hover:border-white/50 transition-colors duration-300 flex flex-col bg-black/60 benchmark-card group";
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-8 items-stretch">
@@ -241,8 +238,8 @@ const LeaderboardModule = (() => {
                         </svg>
                         <div class="flex-shrink-0 relative group/score text-center md:text-left mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
                             <span class="text-[10px] uppercase tracking-[0.4em] text-gray-500 block mb-1">Общий балл</span>
-                            <span class="font-title text-[70px] lg:text-[80px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300">${activeVariant.overall.toFixed(1)}</span>
-                            <span class="text-[10px] text-gray-400 cursor-help border-b border-dotted border-gray-600 pb-1 mt-3 block w-max tracking-widest uppercase mx-auto md:mx-0">из ${MAX_TOTAL}</span>
+                            <span class="font-title text-[80px] lg:text-[90px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300">${activeVariant.overall.toFixed(1)}</span>
+                            ${svgBlock}
                             <div class="absolute right-0 md:left-0 top-full mt-4 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-[#0A0A0A] border border-white/20 p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
                                 <span class="text-white mt-1 block">(Сумма 5) × 1.8 = Max 90</span>
@@ -250,24 +247,28 @@ const LeaderboardModule = (() => {
                         </div>
                     </div>
                 </div>
-                ${svgSection}
             `;
 
             if (model.svg_content) {
                 const svgArea = card.querySelector('.svg-render-area');
                 svgArea.innerHTML = model.svg_content;
                 const downloadBtn = card.querySelector('.svg-download-btn');
-                downloadBtn.addEventListener('click', () => {
-                    const blob = new Blob([model.svg_content], { type: 'image/svg+xml' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = modelSlug + '.svg';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                });
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const slug = downloadBtn.getAttribute('data-model-slug');
+                        const blob = new Blob([model.svg_content], { type: 'image/svg+xml' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = slug + '.svg';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    });
+                }
             }
 
             const dateBtn = card.querySelector('.date-dropdown-btn');
