@@ -238,8 +238,16 @@ const AdminApp = (() => {
                     scores,
                     overall: parseFloat(overall.toFixed(1))
                 }],
-                    best_overall: parseFloat(overall.toFixed(1)),
-                    svg_content: document.getElementById('svg-content-area-edit').value || null
+                best_overall: parseFloat(overall.toFixed(1)),
+                svg_content: document.getElementById('svg-content-area').value || null
+            };
+            try {
+                await Api.addModel(model);
+                await loadModels();
+                hideModal();
+            } catch (err) {
+                alert('Ошибка сохранения: ' + err.message);
+            }
         });
     }
 
