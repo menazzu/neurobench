@@ -77,7 +77,7 @@ const AdminApp = (() => {
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
                     <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Промпт #${i + 1} (id: ${p.id})</span>
-                    <span class="text-sm text-gray-300 leading-relaxed">${p.text}</span>
+                    <span class="text-sm text-gray-300 leading-relaxed" style="color: rgba(200,200,210,0.9);">${p.text}</span>
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
                     <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editPrompt(${p.id})">Ред.</button>
@@ -123,7 +123,7 @@ const AdminApp = (() => {
             return `
                 <div class="admin-prompt-card flex justify-between items-start gap-4">
                     <div class="flex-1">
-                        <span class="text-white font-bold">${m.name}</span>
+                        <span class="text-gray-200 font-bold">${m.name}</span>
                         <span class="text-gray-400 ml-2 text-xs">${variantLabel}</span>
                         ${m.author ? `<span class="text-gray-500 ml-2 text-xs">${m.author}</span>` : ''}
                         <span class="text-xs text-gray-500 block mt-1">Промпт: ${promptInfo} | Балл: ${bestScore}${m.svg_content ? ' | SVG ✓' : ''}</span>

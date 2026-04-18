@@ -7,6 +7,7 @@ const LeaderboardModule = (() => {
     let currentDifficulty = 'easy';
     let currentPromptId = null;
     let currentTop = 'all';
+    let currentSort = 'score';
     let modelsData = [];
 
     async function load() {
@@ -87,6 +88,12 @@ const LeaderboardModule = (() => {
             btn.addEventListener('click', () => selectTop(t.key));
             container.appendChild(btn);
         });
+        const sortBtn = document.createElement('button');
+        sortBtn.className = 'top-filter-btn sort-btn' + (currentSort === 'date' ? ' active' : '');
+        sortBtn.setAttribute('data-sort', 'date');
+        sortBtn.textContent = 'По дате';
+        sortBtn.addEventListener('click', () => { currentSort = currentSort === 'date' ? 'score' : 'date'; renderTopFilters(); renderBenchmarkList(); });
+        container.appendChild(sortBtn);
     }
 
     async function selectPrompt(promptId) {
@@ -158,8 +165,11 @@ const LeaderboardModule = (() => {
         const modelSlug = model.name.replace(/[^a-zA-Z0-9]/g, '_');
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-white/20 bg-[#0A0A0A] overflow-hidden flex items-center justify-center p-2" style="width:160px;height:160px;">
+                <div class="svg-viewer-box border border-white/20 bg-[#0A0A0A] overflow-hidden flex items-center justify-center p-2 cursor-pointer hover:border-white/40 transition-colors duration-300 relative group/svg" style="width:220px;height:220px;" title="Открыть SVG в новой вкладке">
                     <div class="svg-render-area w-full h-full flex items-center justify-center"></div>
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/svg:bg-black/40 transition-colors duration-300 pointer-events-none">
+                        <svg class="w-8 h-8 opacity-0 group-hover/svg:opacity-80 transition-opacity duration-300" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </div>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
                     data-model-slug="${escapeHtml(modelSlug)}">
@@ -170,12 +180,38 @@ const LeaderboardModule = (() => {
         `;
     }
 
+    function parseDate(dateStr) {
+        if (!dateStr) return 0;
+        const match = dateStr.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+        if (match) {
+            const d = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10) - 1;
+            let y = parseInt(match[3], 10);
+            if (y < 100) y += 2000;
+            return new Date(y, m, d).getTime();
+        }
+        const iso = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) return new Date(parseInt(iso[1]), parseInt(iso[2]) - 1, parseInt(iso[3])).getTime();
+        return 0;
+    }
+
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
         listContainer.innerHTML = '';
 
-        let displayModels = modelsData;
-        if (currentTop !== 'all') displayModels = modelsData.slice(0, parseInt(currentTop));
+        let displayModels = [...modelsData];
+
+        if (currentSort === 'date') {
+            displayModels.sort((a, b) => {
+                const aDate = (a.variants && a.variants[0] && a.variants[0].date) || '';
+                const bDate = (b.variants && b.variants[0] && b.variants[0].date) || '';
+                const aParsed = parseDate(aDate);
+                const bParsed = parseDate(bDate);
+                return bParsed - aParsed;
+            });
+        }
+
+        if (currentTop !== 'all') displayModels = displayModels.slice(0, parseInt(currentTop));
 
         displayModels.forEach((model, index) => {
             const groups = {};
@@ -238,7 +274,7 @@ const LeaderboardModule = (() => {
                         </svg>
                         <div class="flex-shrink-0 relative group/score text-center md:text-left mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
                             <span class="text-[10px] uppercase tracking-[0.4em] text-gray-500 block mb-1">Общий балл</span>
-                            <span class="font-title text-[80px] lg:text-[90px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300">${activeVariant.overall.toFixed(1)}</span>
+                            <span class="font-title text-[56px] lg:text-[64px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
                             ${svgBlock}
                             <div class="absolute right-0 md:left-0 top-full mt-4 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-[#0A0A0A] border border-white/20 p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
@@ -252,6 +288,14 @@ const LeaderboardModule = (() => {
             if (model.svg_content) {
                 const svgArea = card.querySelector('.svg-render-area');
                 svgArea.innerHTML = model.svg_content;
+                const svgViewerBox = card.querySelector('.svg-viewer-box');
+                if (svgViewerBox) {
+                    svgViewerBox.addEventListener('click', () => {
+                        const blob = new Blob([model.svg_content], { type: 'image/svg+xml' });
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                    });
+                }
                 const downloadBtn = card.querySelector('.svg-download-btn');
                 if (downloadBtn) {
                     downloadBtn.addEventListener('click', (e) => {
@@ -281,7 +325,7 @@ const LeaderboardModule = (() => {
 
             function applyVariant(variant) {
                 overallEl.style.opacity = 0;
-                setTimeout(() => { overallEl.textContent = variant.overall.toFixed(1); overallEl.style.opacity = 1; }, 150);
+                setTimeout(() => { overallEl.textContent = Math.floor(variant.overall); overallEl.setAttribute('data-raw', variant.overall); overallEl.style.opacity = 1; }, 150);
                 if (dateDisplay) {
                     dateDisplay.style.opacity = 0;
                     setTimeout(() => { dateDisplay.textContent = variant.date; dateDisplay.style.opacity = 1; }, 150);
