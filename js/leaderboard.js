@@ -166,7 +166,7 @@ const LeaderboardModule = (() => {
         const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-white/20 overflow-hidden relative group/svg cursor-pointer" style="width:220px;height:220px;" title="Открыть SVG в новой вкладке">
+                <div class="svg-viewer-box border border-white/20 overflow-hidden" style="width:220px;height:220px;">
                     <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;"></iframe>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
@@ -296,17 +296,18 @@ const LeaderboardModule = (() => {
                 const sanitized = sanitizeSvg(model.svg_content);
                 const svgIframe = card.querySelector('.svg-iframe');
                 if (svgIframe) {
-                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage('svg-open','*')">${sanitized}</body></html>`;
+                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
                     svgIframe.srcdoc = iframeSrc;
-                }
-                const svgViewerBox = card.querySelector('.svg-viewer-box');
-                if (svgViewerBox) {
-                    svgViewerBox.addEventListener('click', () => {
-                        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
-                        const blob = new Blob([html], { type: 'text/html' });
-                        const url = URL.createObjectURL(blob);
-                        window.open(url, '_blank');
-                    });
+                    const handler = (e) => {
+                        if (e.data && e.data.type === 'svg-open' && e.data.id === svgIframe.id) {
+                            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
+                            const blob = new Blob([html], { type: 'text/html' });
+                            const url = URL.createObjectURL(blob);
+                            window.open(url, '_blank');
+                            URL.revokeObjectURL(url);
+                        }
+                    };
+                    window.addEventListener('message', handler);
                 }
                 const downloadBtn = card.querySelector('.svg-download-btn');
                 if (downloadBtn) {
