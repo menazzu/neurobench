@@ -195,6 +195,31 @@ const LeaderboardModule = (() => {
         return 0;
     }
 
+    function sanitizeSvg(svgStr) {
+        return svgStr
+            .replace(/<\?xml[^?]*\?>/gi, '')
+            .replace(/<!DOCTYPE[^>]*>/gi, '')
+            .replace(/\s+xmlns\s*=\s*["']/g, ' xmlns="')
+            .replace(/<svg(?![^>]*xmlns)/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+
+    function constrainSvg(container) {
+        const svg = container.querySelector('svg');
+        if (!svg) return;
+        svg.style.maxWidth = '100%';
+        svg.style.maxHeight = '100%';
+        svg.style.width = 'auto';
+        svg.style.height = 'auto';
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        if (!svg.getAttribute('viewBox')) {
+            const w = svg.getAttribute('width') || svg.getBoundingClientRect().width || 200;
+            const h = svg.getAttribute('height') || svg.getBoundingClientRect().height || 200;
+            svg.setAttribute('viewBox', `0 0 ${parseFloat(w)} ${parseFloat(h)}`);
+        }
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+    }
+
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
         listContainer.innerHTML = '';
@@ -235,11 +260,12 @@ const LeaderboardModule = (() => {
                 }).join('');
                 variantsHtml = `<div class="flex flex-wrap gap-1.5 mb-4 variant-pills-container">${pills}</div>`;
             } else if (uniqueLabels.length === 1 && activeLabel !== "Default") {
-                variantsHtml = `<div class="text-[10px] tracking-[0.2em] text-gray-400 uppercase mb-4">${activeLabel}</div>`;
+                variantsHtml = `<div class="text-[12px] font-bold tracking-[0.15em] text-gray-300 uppercase mb-4">${activeLabel}</div>`;
             }
 
-            const rank = String(index + 1).padStart(2, '0');
-            const authorHtml = model.author ? `<p class="text-[10px] text-gray-500 tracking-wider mt-1 mb-2">${model.author}</p>` : '';
+            const rank = index + 1;
+            const rankDisplay = String(rank).padStart(2, '0');
+            const authorHtml = model.author ? `<p class="text-[11px] text-gray-400 font-mono tracking-wider mt-1">${model.author}</p>` : '';
 
             const dateSelectorHtml = `
                 <div class="relative inline-block text-left mb-3 w-fit mx-auto lg:mx-0 date-dropdown-container">
@@ -257,15 +283,17 @@ const LeaderboardModule = (() => {
             card.className = "glass-panel p-8 border border-white/20 hover:border-white/50 transition-colors duration-300 flex flex-col bg-black/60 benchmark-card group";
 
             card.innerHTML = `
-                <div class="flex flex-col lg:flex-row gap-8 items-stretch">
-                    <div class="w-full lg:w-1/4 flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-8 lg:pb-0 pr-0 lg:pr-8 relative">
-                        <p class="text-[10px] tracking-[0.2em] text-gray-500 uppercase mb-2">#${rank}</p>
+                <div class="flex flex-col lg:flex-row gap-0 items-stretch">
+                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 px-2 lg:px-6 lg:w-24 flex-shrink-0">
+                        <span class="font-title text-[48px] lg:text-[56px] leading-none text-white/15 group-hover:text-white/30 transition-colors font-bold rank-number">#${rankDisplay}</span>
+                        ${authorHtml}
+                    </div>
+                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-0 lg:pl-6 relative">
                         <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
-                        ${authorHtml}
                         <div class="mt-2">${variantsHtml}</div>
                     </div>
-                    <div class="w-full lg:w-3/4 flex flex-col md:flex-row items-center justify-between mt-6 lg:mt-0 lg:pl-10 group/bracket">
+                    <div class="w-full lg:flex-1 flex flex-col md:flex-row items-center justify-between mt-6 lg:mt-0 lg:pl-10 group/bracket">
                         <div class="flex-grow flex flex-col gap-y-5 w-full scores-container self-stretch justify-center">
                             ${scoresHtml}
                         </div>
@@ -273,8 +301,8 @@ const LeaderboardModule = (() => {
                             <path d="M 2 1 C 18 1 18 8 18 20 L 18 42 C 18 48 18 49 34 50 C 18 51 18 52 18 58 L 18 80 C 18 92 18 99 2 99" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <div class="flex-shrink-0 relative group/score text-center md:text-left mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
-                            <span class="text-[10px] uppercase tracking-[0.4em] text-gray-500 block mb-1">Общий балл</span>
-                            <span class="font-title text-[56px] lg:text-[64px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
+                            <span class="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
+                            <span class="font-title text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
                             ${svgBlock}
                             <div class="absolute right-0 md:left-0 top-full mt-4 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-[#0A0A0A] border border-white/20 p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
@@ -287,11 +315,14 @@ const LeaderboardModule = (() => {
 
             if (model.svg_content) {
                 const svgArea = card.querySelector('.svg-render-area');
-                svgArea.innerHTML = model.svg_content;
+                const sanitized = sanitizeSvg(model.svg_content);
+                svgArea.innerHTML = sanitized;
                 const svgViewerBox = card.querySelector('.svg-viewer-box');
                 if (svgViewerBox) {
+                    constrainSvg(svgArea);
                     svgViewerBox.addEventListener('click', () => {
-                        const blob = new Blob([model.svg_content], { type: 'image/svg+xml' });
+                        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
+                        const blob = new Blob([html], { type: 'text/html' });
                         const url = URL.createObjectURL(blob);
                         window.open(url, '_blank');
                     });
