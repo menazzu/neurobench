@@ -61,11 +61,11 @@ const LeaderboardModule = (() => {
             container.innerHTML = '<span class="text-xs text-gray-500 uppercase tracking-widest">Нет промптов</span>';
             return;
         }
-        prompts.forEach((p, i) => {
+            prompts.forEach((p, i) => {
             const btn = document.createElement('button');
             btn.className = 'top-filter-btn' + (p.id === currentPromptId ? ' active' : '');
             btn.setAttribute('data-prompt-id', p.id);
-            btn.textContent = 'Промпт #' + (i + 1);
+            btn.textContent = p.name || ('Промпт #' + (i + 1));
             btn.addEventListener('click', () => selectPrompt(p.id));
             container.appendChild(btn);
         });
@@ -163,10 +163,11 @@ const LeaderboardModule = (() => {
     function renderSvgBlock(model) {
         if (!model.svg_content) return '';
         const modelSlug = model.name.replace(/[^a-zA-Z0-9]/g, '_');
+        const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-white/20 bg-[#0A0A0A] overflow-hidden flex items-center justify-center p-2 cursor-pointer hover:border-white/40 transition-colors duration-300 relative group/svg" style="width:220px;height:220px;" title="Открыть SVG в новой вкладке">
-                    <div class="svg-render-area w-full h-full flex items-center justify-center"></div>
+                <div class="svg-viewer-box border border-white/20 overflow-hidden flex items-center justify-center p-0 cursor-pointer hover:border-white/40 transition-colors duration-300 relative group/svg" style="width:220px;height:220px;" title="Открыть SVG в новой вкладке">
+                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;" sandbox="allow-same-origin"></iframe>
                     <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/svg:bg-black/40 transition-colors duration-300 pointer-events-none">
                         <svg class="w-8 h-8 opacity-0 group-hover/svg:opacity-80 transition-opacity duration-300" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                     </div>
@@ -201,23 +202,6 @@ const LeaderboardModule = (() => {
             .replace(/<!DOCTYPE[^>]*>/gi, '')
             .replace(/\s+xmlns\s*=\s*["']/g, ' xmlns="')
             .replace(/<svg(?![^>]*xmlns)/, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
-
-    function constrainSvg(container) {
-        const svg = container.querySelector('svg');
-        if (!svg) return;
-        svg.style.maxWidth = '100%';
-        svg.style.maxHeight = '100%';
-        svg.style.width = 'auto';
-        svg.style.height = 'auto';
-        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-        if (!svg.getAttribute('viewBox')) {
-            const w = svg.getAttribute('width') || svg.getBoundingClientRect().width || 200;
-            const h = svg.getAttribute('height') || svg.getBoundingClientRect().height || 200;
-            svg.setAttribute('viewBox', `0 0 ${parseFloat(w)} ${parseFloat(h)}`);
-        }
-        svg.removeAttribute('width');
-        svg.removeAttribute('height');
     }
 
     function renderBenchmarkList() {
@@ -284,11 +268,11 @@ const LeaderboardModule = (() => {
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
-                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 px-2 lg:px-6 lg:w-24 flex-shrink-0">
-                        <span class="font-title text-[48px] lg:text-[56px] leading-none text-white/15 group-hover:text-white/30 transition-colors font-bold rank-number">#${rankDisplay}</span>
+                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 px-4 lg:px-5 lg:w-20 min-w-[60px] flex-shrink-0">
+                        <span class="font-title text-[40px] lg:text-[48px] leading-none text-white/20 group-hover:text-white/40 transition-colors font-bold rank-number">#${rankDisplay}</span>
                         ${authorHtml}
                     </div>
-                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-0 lg:pl-6 relative">
+                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-4 lg:pl-6 relative">
                         <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
                         <div class="mt-2">${variantsHtml}</div>
@@ -314,12 +298,14 @@ const LeaderboardModule = (() => {
             `;
 
             if (model.svg_content) {
-                const svgArea = card.querySelector('.svg-render-area');
                 const sanitized = sanitizeSvg(model.svg_content);
-                svgArea.innerHTML = sanitized;
+                const svgIframe = card.querySelector('.svg-iframe');
+                if (svgIframe) {
+                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
+                    svgIframe.srcdoc = iframeSrc;
+                }
                 const svgViewerBox = card.querySelector('.svg-viewer-box');
                 if (svgViewerBox) {
-                    constrainSvg(svgArea);
                     svgViewerBox.addEventListener('click', () => {
                         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
                         const blob = new Blob([html], { type: 'text/html' });

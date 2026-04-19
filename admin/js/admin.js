@@ -76,7 +76,7 @@ const AdminApp = (() => {
         container.innerHTML = prompts.map((p, i) => `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">Промпт #${i + 1} (id: ${p.id})</span>
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">${p.name ? escapeHtml(p.name) : 'Промпт #' + (i + 1)} (id: ${p.id})</span>
                     <span class="text-sm text-gray-300 leading-relaxed" style="color: rgba(200,200,210,0.9);">${p.text}</span>
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
@@ -100,9 +100,10 @@ const AdminApp = (() => {
         const select = document.getElementById('models-prompt-filter');
         select.innerHTML = '<option value="all">Все</option>';
         allPromptsData.forEach(p => {
+            const label = p.name || ('Промпт #' + p.id);
             const shortText = p.text.length > 60 ? p.text.substring(0, 60) + '...' : p.text;
             const diffLabel = p.difficulty === 'easy' ? 'Лёгкий' : p.difficulty === 'medium' ? 'Средний' : 'Сложный';
-            select.innerHTML += `<option value="${p.id}">#${p.id} [${diffLabel}] ${shortText}</option>`;
+            select.innerHTML += `<option value="${p.id}">[${diffLabel}] ${label}</option>`;
         });
     }
 
@@ -255,6 +256,8 @@ const AdminApp = (() => {
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Добавить промпт</h3>
             <form id="prompt-form" class="flex flex-col gap-4">
+                <input name="name" placeholder="Название (необязательно, напр. «Волны»)" 
+                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <select name="difficulty" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                     <option value="easy" ${currentDifficulty === 'easy' ? 'selected' : ''}>Лёгкий</option>
                     <option value="medium" ${currentDifficulty === 'medium' ? 'selected' : ''}>Средний</option>
@@ -273,7 +276,7 @@ const AdminApp = (() => {
             e.preventDefault();
             const fd = new FormData(e.target);
             try {
-                await Api.addPrompt({ difficulty: fd.get('difficulty'), text: fd.get('text') });
+                await Api.addPrompt({ difficulty: fd.get('difficulty'), text: fd.get('text'), name: fd.get('name') || null });
                 await loadPrompts();
                 hideModal();
             } catch (err) {
@@ -408,6 +411,8 @@ const AdminApp = (() => {
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать промпт</h3>
             <form id="prompt-edit-form" class="flex flex-col gap-4">
+                <input name="name" value="${prompt.name || ''}" placeholder="Название (необязательно, напр. «Волны»)" 
+                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <select name="difficulty" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                     <option value="easy" ${prompt.difficulty === 'easy' ? 'selected' : ''}>Лёгкий</option>
                     <option value="medium" ${prompt.difficulty === 'medium' ? 'selected' : ''}>Средний</option>
@@ -426,7 +431,7 @@ const AdminApp = (() => {
             e.preventDefault();
             const fd = new FormData(e.target);
             try {
-                await Api.updatePrompt(id, { text: fd.get('text'), difficulty: fd.get('difficulty') });
+                await Api.updatePrompt(id, { text: fd.get('text'), difficulty: fd.get('difficulty'), name: fd.get('name') || null });
                 await loadPrompts();
                 await loadModels();
                 hideModal();
