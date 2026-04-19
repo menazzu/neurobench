@@ -251,7 +251,7 @@ const LeaderboardModule = (() => {
 
             const rank = index + 1;
             const rankDisplay = String(rank).padStart(2, '0');
-            const authorHtml = model.author ? `<p class="text-[11px] text-gray-400 font-mono tracking-wider mt-1">${model.author}</p>` : '';
+            const authorHtml = model.author ? `<p class="text-[9px] text-gray-500 font-mono tracking-wider mt-1">${model.author}</p>` : '';
 
             const dateSelectorHtml = `
                 <div class="relative inline-block text-left mb-3 w-fit mx-auto lg:mx-0 date-dropdown-container">
@@ -270,11 +270,11 @@ const LeaderboardModule = (() => {
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
-                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 px-3 lg:px-4 lg:w-[72px] min-w-[56px] flex-shrink-0">
-                        <span class="font-title text-[36px] lg:text-[42px] leading-none text-white/20 group-hover:text-white/40 transition-colors font-bold rank-number">#${rankDisplay}</span>
+                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-4 lg:pb-0 px-2 lg:px-3 lg:w-14 min-w-[44px] flex-shrink-0">
+                        <span class="font-title text-[22px] lg:text-[26px] leading-none text-white/25 group-hover:text-white/45 transition-colors font-bold rank-number">#${rankDisplay}</span>
                         ${authorHtml}
                     </div>
-                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-6 lg:pl-8 relative">
+                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-5 lg:pl-6 relative">
                         <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
                         <div class="mt-2">${variantsHtml}</div>
