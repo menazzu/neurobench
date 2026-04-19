@@ -166,13 +166,8 @@ const LeaderboardModule = (() => {
         const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-white/20 overflow-hidden flex items-center justify-center p-0 relative group/svg" style="width:220px;height:220px;">
-                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;pointer-events:none;"></iframe>
-                    <div class="svg-open-overlay absolute inset-0 flex items-center justify-center cursor-pointer hover:border-white/40 transition-colors duration-300" title="Открыть SVG в новой вкладке">
-                        <div class="bg-black/0 hover:bg-black/40 transition-colors duration-300 w-full h-full flex items-center justify-center">
-                            <svg class="w-8 h-8 opacity-0 group-hover/svg:opacity-80 transition-opacity duration-300" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                        </div>
-                    </div>
+                <div class="svg-viewer-box border border-white/20 overflow-hidden relative group/svg cursor-pointer" style="width:220px;height:220px;" title="Открыть SVG в новой вкладке">
+                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;"></iframe>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
                     data-model-slug="${escapeHtml(modelSlug)}">
@@ -244,10 +239,12 @@ const LeaderboardModule = (() => {
                     const activeClass = i === 0 ? 'bg-[#F2F2F2] text-black border-[#F2F2F2]' : 'bg-transparent text-gray-400 border-white/20 hover:border-white/50 hover:text-white cursor-pointer';
                     return `<button class="variant-pill px-3 py-1.5 text-[10px] uppercase tracking-wider border transition-all duration-200 ${activeClass}" data-label="${lbl}">${lbl}</button>`;
                 }).join('');
-                variantsHtml = `<div class="flex flex-wrap gap-1.5 mb-4 variant-pills-container">${pills}</div>`;
+                variantsHtml = `<div class="flex flex-wrap gap-1.5 mb-1 variant-pills-container">${pills}</div>`;
             } else if (uniqueLabels.length === 1 && activeLabel !== "Default") {
-                variantsHtml = `<div class="text-[12px] font-bold tracking-[0.15em] text-gray-300 uppercase mb-4">${activeLabel}</div>`;
+                variantsHtml = `<div class="text-[12px] font-bold tracking-[0.15em] text-gray-300 uppercase mb-1">${activeLabel}</div>`;
             }
+
+            const authorLine = model.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${model.author}</span>` : '';
 
             const rank = index + 1;
             const rankDisplay = String(rank).padStart(2, '0');
@@ -269,14 +266,11 @@ const LeaderboardModule = (() => {
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
-                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-4 lg:pb-0 px-2 lg:px-3 lg:w-14 min-w-[44px] flex-shrink-0 overflow-hidden">
-                        <span class="font-title text-[22px] lg:text-[26px] leading-none text-white/25 group-hover:text-white/45 transition-colors font-bold rank-number">#${rankDisplay}</span>
-                        <p class="text-[9px] text-gray-500 font-mono tracking-wider mt-1 max-w-full truncate text-center"${model.author ? '' : ' style="display:none"'}>${model.author || ''}</p>
-                    </div>
-                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-5 lg:pl-6 relative">
+                    <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
+                        <span class="text-[10px] font-mono text-white/30 group-hover:text-white/50 transition-colors tracking-widest mb-1">#${rankDisplay}</span>
                         <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
-                        <div class="mt-2">${variantsHtml}</div>
+                        <div class="mt-2">${variantsHtml} ${authorLine}</div>
                     </div>
                     <div class="w-full lg:flex-1 flex flex-col md:flex-row items-center justify-between mt-6 lg:mt-0 lg:pl-10 group/bracket">
                         <div class="flex-grow flex flex-col gap-y-5 w-full scores-container self-stretch justify-center">
@@ -302,12 +296,12 @@ const LeaderboardModule = (() => {
                 const sanitized = sanitizeSvg(model.svg_content);
                 const svgIframe = card.querySelector('.svg-iframe');
                 if (svgIframe) {
-                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
+                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage('svg-open','*')">${sanitized}</body></html>`;
                     svgIframe.srcdoc = iframeSrc;
                 }
-                const svgOpenOverlay = card.querySelector('.svg-open-overlay');
-                if (svgOpenOverlay) {
-                    svgOpenOverlay.addEventListener('click', () => {
+                const svgViewerBox = card.querySelector('.svg-viewer-box');
+                if (svgViewerBox) {
+                    svgViewerBox.addEventListener('click', () => {
                         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
                         const blob = new Blob([html], { type: 'text/html' });
                         const url = URL.createObjectURL(blob);

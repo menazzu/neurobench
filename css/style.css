@@ -219,10 +219,6 @@ body {
     height: 100%;
     border: none;
     background: transparent;
-    pointer-events: none;
-}
-.svg-open-overlay {
-    z-index: 2;
 }
 .rank-number {
     font-variant-numeric: tabular-nums;
