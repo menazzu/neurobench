@@ -166,10 +166,12 @@ const LeaderboardModule = (() => {
         const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-white/20 overflow-hidden flex items-center justify-center p-0 cursor-pointer hover:border-white/40 transition-colors duration-300 relative group/svg" style="width:220px;height:220px;" title="Открыть SVG в новой вкладке">
-                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;" sandbox="allow-same-origin"></iframe>
-                    <div class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover/svg:bg-black/40 transition-colors duration-300 pointer-events-none">
-                        <svg class="w-8 h-8 opacity-0 group-hover/svg:opacity-80 transition-opacity duration-300" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                <div class="svg-viewer-box border border-white/20 overflow-hidden flex items-center justify-center p-0 relative group/svg" style="width:220px;height:220px;">
+                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;pointer-events:none;"></iframe>
+                    <div class="svg-open-overlay absolute inset-0 flex items-center justify-center cursor-pointer hover:border-white/40 transition-colors duration-300" title="Открыть SVG в новой вкладке">
+                        <div class="bg-black/0 hover:bg-black/40 transition-colors duration-300 w-full h-full flex items-center justify-center">
+                            <svg class="w-8 h-8 opacity-0 group-hover/svg:opacity-80 transition-opacity duration-300" fill="none" stroke="white" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </div>
                     </div>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
@@ -268,11 +270,11 @@ const LeaderboardModule = (() => {
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
-                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 px-4 lg:px-5 lg:w-20 min-w-[60px] flex-shrink-0">
-                        <span class="font-title text-[40px] lg:text-[48px] leading-none text-white/20 group-hover:text-white/40 transition-colors font-bold rank-number">#${rankDisplay}</span>
+                    <div class="flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 px-3 lg:px-4 lg:w-[72px] min-w-[56px] flex-shrink-0">
+                        <span class="font-title text-[36px] lg:text-[42px] leading-none text-white/20 group-hover:text-white/40 transition-colors font-bold rank-number">#${rankDisplay}</span>
                         ${authorHtml}
                     </div>
-                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-4 lg:pl-6 relative">
+                    <div class="w-full lg:w-[22%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-6 pl-6 lg:pl-8 relative">
                         <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
                         <div class="mt-2">${variantsHtml}</div>
@@ -284,11 +286,11 @@ const LeaderboardModule = (() => {
                         <svg preserveAspectRatio="none" viewBox="0 0 36 100" class="hidden md:block w-[28px] mx-6 text-white/40 stroke-current transition-colors duration-500 group-hover/bracket:text-white/80 self-stretch" fill="none">
                             <path d="M 2 1 C 18 1 18 8 18 20 L 18 42 C 18 48 18 49 34 50 C 18 51 18 52 18 58 L 18 80 C 18 92 18 99 2 99" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <div class="flex-shrink-0 relative group/score text-center md:text-left mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
+                        <div class="flex-shrink-0 relative z-30 group/score text-center md:text-left mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
                             <span class="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
                             <span class="font-title text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
                             ${svgBlock}
-                            <div class="absolute right-0 md:left-0 top-full mt-4 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-[#0A0A0A] border border-white/20 p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-50 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                            <div class="absolute left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-[#0A0A0A] border border-white/20 p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
                                 <span class="text-white mt-1 block">(Сумма 5) × 1.8 = Max 90</span>
                             </div>
@@ -304,9 +306,9 @@ const LeaderboardModule = (() => {
                     const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
                     svgIframe.srcdoc = iframeSrc;
                 }
-                const svgViewerBox = card.querySelector('.svg-viewer-box');
-                if (svgViewerBox) {
-                    svgViewerBox.addEventListener('click', () => {
+                const svgOpenOverlay = card.querySelector('.svg-open-overlay');
+                if (svgOpenOverlay) {
+                    svgOpenOverlay.addEventListener('click', () => {
                         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
                         const blob = new Blob([html], { type: 'text/html' });
                         const url = URL.createObjectURL(blob);
