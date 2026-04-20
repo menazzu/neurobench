@@ -17,6 +17,33 @@ body {
     pointer-events: none;
 }
 
+#glcanvas-fallback {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    display: none;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 3px,
+            rgba(255,255,255,0.03) 3px,
+            rgba(255,255,255,0.03) 4px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 3px,
+            rgba(255,255,255,0.02) 3px,
+            rgba(255,255,255,0.02) 4px
+        ),
+        radial-gradient(ellipse at center, #0a0a0a 0%, #050505 100%);
+}
+
 .glass-panel {
     background: rgba(10, 10, 10, 0.4);
     backdrop-filter: blur(16px);
@@ -214,11 +241,11 @@ body {
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
     background-color: #0A0A0A;
 }
-.svg-viewer-box .svg-iframe {
+.svg-viewer-box .svg-img {
     width: 100%;
     height: 100%;
-    border: none;
-    background: transparent;
+    object-fit: contain;
+    cursor: pointer;
 }
 .rank-number {
     font-variant-numeric: tabular-nums;
@@ -228,5 +255,96 @@ body {
 }
 
 .benchmark-card {
-    transition: opacity 0.3s ease, transform 0.3s ease, border-color 0.3s ease, background-color 0.4s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.3s ease, background-color 0.4s ease;
+}
+
+.benchmark-card.card-enter {
+    opacity: 0;
+    transform: translateY(24px);
+}
+
+.benchmark-card.card-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.search-input::placeholder {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+}
+
+.criteria-sort-select {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.5);
+    padding: 6px 28px 6px 12px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.4)' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+.criteria-sort-select:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
+}
+.criteria-sort-select:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+.criteria-sort-select option {
+    background: #0a0a0a;
+    color: #ffffff;
+}
+
+.pagination-btn {
+    padding: 6px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.pagination-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.1);
+}
+.pagination-btn.active {
+    background: #F2F2F2;
+    color: #000;
+    border-color: #F2F2F2;
+}
+.pagination-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    body { cursor: default; }
+    .logo-badge { padding: 6px 12px; }
+    .logo-badge .gradient-text { font-size: 12px !important; }
+    .svg-viewer-box { width: 180px !important; height: 180px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .marquee-track { animation: none; }
+    .glitch::before, .glitch::after { animation: none; opacity: 0; }
+    .gradient-text { animation: none; background-position: 0% 50%; }
+    .benchmark-card { transition: border-color 0.3s ease, background-color 0.4s ease; }
+    .benchmark-card.card-enter { opacity: 1; transform: none; }
+    .hatching-fill { transition: none; }
+    .glass-panel { transition: background-color 0.2s ease, border-color 0.2s ease; }
+    #glcanvas { display: none; }
+    #glcanvas-fallback { display: block; }
 }

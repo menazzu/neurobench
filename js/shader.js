@@ -49,19 +49,46 @@ const ShaderModule = (() => {
         const shader = gl.createShader(type);
         gl.shaderSource(shader, source);
         gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.warn('Shader compile error:', gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
         return shader;
     }
 
-    function init() {
+    function initFallback() {
+        const fallback = document.getElementById('glcanvas-fallback');
+        if (fallback) fallback.style.display = 'block';
         const canvas = document.getElementById('glcanvas');
-        if (!canvas) return null;
-        const gl = canvas.getContext('webgl');
-        if (!gl) return null;
+        if (canvas) canvas.style.display = 'none';
+    }
+
+    function init() {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            initFallback();
+            return null;
+        }
+
+        const canvas = document.getElementById('glcanvas');
+        if (!canvas) { initFallback(); return null; }
+
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) { initFallback(); return null; }
+
+        const vertShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+        if (!vertShader || !fragShader) { initFallback(); return null; }
 
         const program = gl.createProgram();
-        gl.attachShader(program, createShader(gl, gl.VERTEX_SHADER, vertexShaderSource));
-        gl.attachShader(program, createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource));
+        gl.attachShader(program, vertShader);
+        gl.attachShader(program, fragShader);
         gl.linkProgram(program);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.warn('Program link error:', gl.getProgramInfoLog(program));
+            initFallback();
+            return null;
+        }
         gl.useProgram(program);
 
         const positionBuffer = gl.createBuffer();

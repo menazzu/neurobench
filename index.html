@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NeuroBench | Generative Op-Art Evaluation</title>
+    <meta name="description" content="NeuroBench — бенчмарк для оценки генеративных LLM на задачах SVG op-art. Проверка истинного воображения, математической логики и структурного кода.">
+    <meta name="keywords" content="LLM benchmark, SVG, generative AI, op-art, evaluation, NeuroBench">
+    <meta name="author" content="NeuroBench">
+    <meta property="og:title" content="NeuroBench | Generative Op-Art Evaluation">
+    <meta property="og:description" content="Бенчмарк для оценки генеративных LLM на задачах SVG op-art. Проверка воображения, логики и кода.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neurobench.com">
+    <meta property="og:image" content="https://neurobench.com/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="NeuroBench | Generative Op-Art Evaluation">
+    <meta name="twitter:description" content="Бенчмарк для оценки генеративных LLM на задачах SVG op-art.">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x2728;</text></svg>">
 
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -31,6 +43,7 @@
 <body class="antialiased min-h-screen flex flex-col">
 
     <canvas id="glcanvas"></canvas>
+    <div id="glcanvas-fallback"></div>
 
     <div class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-50 pointer-events-none font-mono text-xs tracking-widest uppercase">
         <div class="logo-badge">
@@ -48,24 +61,7 @@
     </header>
 
     <div class="relative z-10 w-full overflow-hidden bg-black/70 border-y border-white/20 py-4 mb-20 backdrop-blur-md">
-        <div class="marquee-track flex gap-8 items-center text-xs tracking-[0.2em] uppercase font-mono text-gray-400">
-            <span>op-art line distortion</span> <span class="text-white/30">✦</span>
-            <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
-            <span>contour warp</span> <span class="text-white/30">✦</span>
-            <span>radial guilloché</span> <span class="text-white/30">✦</span>
-            <span>hypnotic spiral op-art</span> <span class="text-white/30">✦</span>
-            <span>concentric line pattern</span> <span class="text-white/30">✦</span>
-            <span>contour hatching</span> <span class="text-white/30">✦</span>
-            <span>engraving style</span> <span class="text-white/30">✦</span>
-            <span>op-art line distortion</span> <span class="text-white/30">✦</span>
-            <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
-            <span>contour warp</span> <span class="text-white/30">✦</span>
-            <span>radial guilloché</span> <span class="text-white/30">✦</span>
-            <span>hypnotic spiral op-art</span> <span class="text-white/30">✦</span>
-            <span>concentric line pattern</span> <span class="text-white/30">✦</span>
-            <span>contour hatching</span> <span class="text-white/30">✦</span>
-            <span>engraving style</span> <span class="text-white/30">✦</span>
-        </div>
+        <div id="marquee-track" class="marquee-track flex gap-8 items-center text-xs tracking-[0.2em] uppercase font-mono text-gray-400"></div>
     </div>
 
     <section class="max-w-7xl mx-auto px-4 py-8 relative z-10 text-white font-mono mb-24">
@@ -124,7 +120,16 @@
                 <div class="flex flex-col gap-4">
                     <div id="difficulty-filters" class="flex flex-wrap gap-2"></div>
                     <div id="prompt-filters" class="flex flex-wrap gap-2"></div>
-                    <div id="top-filters" class="flex flex-wrap gap-2"></div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div id="top-filters" class="flex flex-wrap gap-2"></div>
+                        <div id="criteria-sort" class="flex gap-2 items-center"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full md:w-auto">
+                <div class="relative">
+                    <input type="text" id="model-search" placeholder="Поиск модели..." class="search-input w-full md:w-64 bg-white/5 border border-white/20 px-4 py-2.5 pr-10 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50 transition-colors font-mono uppercase tracking-wider">
+                    <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
             </div>
         </div>
@@ -136,11 +141,44 @@
             </div>
         </div>
 
+        <div id="error-container" class="hidden mb-8">
+            <div class="glass-panel p-6 border border-red-500/30 text-center">
+                <p class="text-sm text-red-400 mb-3" id="error-message">Ошибка загрузки данных</p>
+                <button id="retry-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors cursor-pointer">Повторить</button>
+            </div>
+        </div>
+
+        <div id="loading-state" class="hidden mb-8">
+            <div class="text-center py-12">
+                <div class="inline-block animate-spin w-8 h-8 border-2 border-white/20 border-t-white rounded-full"></div>
+                <p class="text-xs uppercase tracking-widest text-gray-500 mt-4">Загрузка...</p>
+            </div>
+        </div>
+
         <div id="benchmark-list" class="flex flex-col gap-8"></div>
+
+        <div id="pagination-container" class="mt-8 flex justify-center gap-2 hidden"></div>
 
         <div id="empty-state" class="empty-state hidden">Выберите промпт</div>
 
     </main>
+
+    <footer class="relative z-10 border-t border-white/20 bg-black/80 backdrop-blur-md py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4 font-mono text-xs text-gray-500">
+            <div class="flex items-center gap-3">
+                <span class="gradient-text font-title font-bold text-sm" data-text="NeuroBench">NeuroBench</span>
+                <span class="text-white/20">|</span>
+                <span class="uppercase tracking-widest">Generative Op-Art Evaluation</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://t.me/codercodex" target="_blank" rel="noopener" class="hover:text-white transition-colors uppercase tracking-widest">Telegram</a>
+                <span class="text-white/20">|</span>
+                <a href="/admin/" class="hover:text-white transition-colors uppercase tracking-widest">Admin</a>
+                <span class="text-white/20">|</span>
+                <span class="uppercase tracking-widest">&copy; 2025 NeuroBench</span>
+            </div>
+        </div>
+    </footer>
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>

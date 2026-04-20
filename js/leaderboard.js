@@ -1,6 +1,12 @@
 const CRITERIA = ["Визуал", "Анимация", "Креатив", "Код", "Детали"];
 const MAX_PER = 10;
 const MAX_TOTAL = 90;
+const ITEMS_PER_PAGE = 10;
+const MARQUEE_ITEMS = [
+    'op-art line distortion', 'wavy moiré topography', 'contour warp',
+    'radial guilloché', 'hypnotic spiral op-art', 'concentric line pattern',
+    'contour hatching', 'engraving style'
+];
 
 const LeaderboardModule = (() => {
     let promptsCache = { easy: [], medium: [], hard: [] };
@@ -8,16 +14,68 @@ const LeaderboardModule = (() => {
     let currentPromptId = null;
     let currentTop = 'all';
     let currentSort = 'score';
+    let currentCriteriaSort = -1;
+    let searchQuery = '';
     let modelsData = [];
+    let currentPage = 1;
+    let isLoading = false;
+
+    const DANGEROUS_SVG_TAGS = ['script', 'iframe', 'object', 'embed', 'applet', 'form', 'input', 'button', 'link', 'meta', 'base'];
+    const DANGEROUS_SVG_ATTRS = ['onload', 'onclick', 'onerror', 'onmouseover', 'onfocus', 'onblur', 'onsubmit', 'onkeydown', 'onkeyup', 'onkeypress', 'onchange', 'oninput', 'ondblclick', 'oncontextmenu', 'onmousedown', 'onmouseup', 'onmouseout', 'onmousemove', 'onwheel', 'ondrag', 'ondragstart', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondrop', 'onscroll', 'ontouchstart', 'ontouchmove', 'ontouchend'];
+
+    function sanitizeSvg(svgStr) {
+        let s = svgStr
+            .replace(/<\?xml[^?]*\?>/gi, '')
+            .replace(/<!DOCTYPE[^>]*>/gi, '');
+        DANGEROUS_SVG_TAGS.forEach(tag => {
+            const rx = new RegExp('<\\/?' + tag + '[^>]*>', 'gi');
+            s = s.replace(rx, '');
+        });
+        DANGEROUS_SVG_ATTRS.forEach(attr => {
+            const rx = new RegExp('\\s+' + attr + '\\s*=\\s*["\'][^"\']*["\']', 'gi');
+            s = s.replace(rx, '');
+        });
+        s = s.replace(/\s+on[a-z]+\s*=\s*["'][^"']*["']/gi, '');
+        s = s.replace(/javascript\s*:/gi, 'removed:');
+        s = s.replace(/\s+xmlns\s*=\s*["']/g, ' xmlns="');
+        s = s.replace(/<svg(?![^>]*xmlns)/, '<svg xmlns="http://www.w3.org/2000/svg"');
+        return s;
+    }
+
+    function showLoading() { document.getElementById('loading-state').classList.remove('hidden'); }
+    function hideLoading() { document.getElementById('loading-state').classList.add('hidden'); }
+    function showError(msg) {
+        document.getElementById('error-message').textContent = msg || 'Ошибка загрузки данных';
+        document.getElementById('error-container').classList.remove('hidden');
+    }
+    function hideError() { document.getElementById('error-container').classList.add('hidden'); }
+
+    function buildMarquee() {
+        const track = document.getElementById('marquee-track');
+        if (!track) return;
+        const separator = '<span class="text-white/30">&#10022;</span>';
+        const items = MARQUEE_ITEMS.map(item => `<span>${item}</span> ${separator}`).join(' ');
+        track.innerHTML = items + items;
+    }
 
     async function load() {
+        buildMarquee();
+        renderCriteriaSort();
+        setupSearch();
+        setupRetry();
+        showLoading();
         try {
             promptsCache.easy = await Api.getPromptsByDifficulty('easy');
             promptsCache.medium = await Api.getPromptsByDifficulty('medium');
             promptsCache.hard = await Api.getPromptsByDifficulty('hard');
-        } catch {
+            hideError();
+        } catch (e) {
             promptsCache = { easy: [], medium: [], hard: [] };
+            hideLoading();
+            showError('Не удалось загрузить промпты. Проверьте подключение.');
+            return;
         }
+        hideLoading();
         renderDifficultyFilters();
         selectDifficulty('easy');
     }
@@ -43,6 +101,7 @@ const LeaderboardModule = (() => {
     function selectDifficulty(diff) {
         currentDifficulty = diff;
         currentPromptId = null;
+        currentPage = 1;
         document.querySelectorAll('#difficulty-filters .difficulty-tab').forEach(b => {
             b.classList.toggle('active', b.getAttribute('data-difficulty') === diff);
         });
@@ -50,7 +109,17 @@ const LeaderboardModule = (() => {
         renderTopFilters();
         hidePromptDisplay();
         clearBenchmarkList();
-        showEmptyState();
+        hidePagination();
+        autoSelectFirstPrompt();
+    }
+
+    function autoSelectFirstPrompt() {
+        const prompts = promptsCache[currentDifficulty] || [];
+        if (prompts.length > 0) {
+            selectPrompt(prompts[0].id);
+        } else {
+            showEmptyState();
+        }
     }
 
     function renderPromptFilters() {
@@ -61,7 +130,7 @@ const LeaderboardModule = (() => {
             container.innerHTML = '<span class="text-xs text-gray-500 uppercase tracking-widest">Нет промптов</span>';
             return;
         }
-            prompts.forEach((p, i) => {
+        prompts.forEach((p, i) => {
             const btn = document.createElement('button');
             btn.className = 'top-filter-btn' + (p.id === currentPromptId ? ' active' : '');
             btn.setAttribute('data-prompt-id', p.id);
@@ -96,8 +165,57 @@ const LeaderboardModule = (() => {
         container.appendChild(sortBtn);
     }
 
+    function renderCriteriaSort() {
+        const container = document.getElementById('criteria-sort');
+        if (!container) return;
+        container.innerHTML = '';
+        const select = document.createElement('select');
+        select.className = 'criteria-sort-select';
+        const opts = [
+            { value: '-1', label: 'Сорт. по критерию' },
+            ...CRITERIA.map((c, i) => ({ value: String(i), label: c }))
+        ];
+        opts.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o.value;
+            opt.textContent = o.label;
+            if (o.value === String(currentCriteriaSort)) opt.selected = true;
+            select.appendChild(opt);
+        });
+        select.addEventListener('change', (e) => {
+            currentCriteriaSort = parseInt(e.target.value);
+            currentPage = 1;
+            renderBenchmarkList();
+        });
+        container.appendChild(select);
+    }
+
+    function setupSearch() {
+        const input = document.getElementById('model-search');
+        if (!input) return;
+        let debounce = null;
+        input.addEventListener('input', (e) => {
+            clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                searchQuery = e.target.value.trim().toLowerCase();
+                currentPage = 1;
+                renderBenchmarkList();
+            }, 250);
+        });
+    }
+
+    function setupRetry() {
+        const btn = document.getElementById('retry-btn');
+        if (!btn) return;
+        btn.addEventListener('click', () => { hideError(); load(); });
+    }
+
     async function selectPrompt(promptId) {
         currentPromptId = promptId;
+        currentPage = 1;
+        searchQuery = '';
+        const searchInput = document.getElementById('model-search');
+        if (searchInput) searchInput.value = '';
         document.querySelectorAll('#prompt-filters .top-filter-btn').forEach(b => {
             b.classList.toggle('active', parseInt(b.getAttribute('data-prompt-id')) === promptId);
         });
@@ -109,13 +227,24 @@ const LeaderboardModule = (() => {
 
     async function loadModels() {
         if (!currentPromptId) { clearBenchmarkList(); showEmptyState(); return; }
-        try { modelsData = await Api.getModelsByPrompt(currentPromptId); } catch { modelsData = []; }
+        showLoading();
+        hideError();
+        try {
+            modelsData = await Api.getModelsByPrompt(currentPromptId);
+            hideError();
+        } catch (e) {
+            modelsData = [];
+            showError('Не удалось загрузить модели. Проверьте подключение.');
+        }
+        hideLoading();
         renderBenchmarkList();
-        hideEmptyState();
+        if (modelsData.length > 0) hideEmptyState();
+        else showEmptyState();
     }
 
     function selectTop(count) {
         currentTop = count;
+        currentPage = 1;
         document.querySelectorAll('#top-filters .top-filter-btn').forEach(b => {
             b.classList.toggle('active', b.getAttribute('data-count') === count);
         });
@@ -133,6 +262,44 @@ const LeaderboardModule = (() => {
     function showEmptyState() { document.getElementById('empty-state').classList.remove('hidden'); }
     function hideEmptyState() { document.getElementById('empty-state').classList.add('hidden'); }
     function clearBenchmarkList() { document.getElementById('benchmark-list').innerHTML = ''; }
+
+    function hidePagination() {
+        const c = document.getElementById('pagination-container');
+        c.classList.add('hidden');
+        c.innerHTML = '';
+    }
+
+    function renderPagination(totalItems) {
+        const container = document.getElementById('pagination-container');
+        container.innerHTML = '';
+        if (totalItems <= ITEMS_PER_PAGE) {
+            container.classList.add('hidden');
+            return;
+        }
+        container.classList.remove('hidden');
+        const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'pagination-btn';
+        prevBtn.textContent = '←';
+        prevBtn.disabled = currentPage <= 1;
+        prevBtn.addEventListener('click', () => { currentPage--; renderBenchmarkList(); });
+        container.appendChild(prevBtn);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+            btn.textContent = i;
+            btn.addEventListener('click', () => { currentPage = i; renderBenchmarkList(); });
+            container.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'pagination-btn';
+        nextBtn.textContent = '→';
+        nextBtn.disabled = currentPage >= totalPages;
+        nextBtn.addEventListener('click', () => { currentPage++; renderBenchmarkList(); });
+        container.appendChild(nextBtn);
+    }
 
     function renderBars(variant) {
         let scoresHtml = '';
@@ -163,11 +330,12 @@ const LeaderboardModule = (() => {
     function renderSvgBlock(model) {
         if (!model.svg_content) return '';
         const modelSlug = model.name.replace(/[^a-zA-Z0-9]/g, '_');
-        const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
+        const sanitized = sanitizeSvg(model.svg_content);
+        const dataUri = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(sanitized)));
         return `
             <div class="mt-4 w-full">
                 <div class="svg-viewer-box border border-white/20 overflow-hidden" style="width:220px;height:220px;">
-                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;"></iframe>
+                    <img src="${dataUri}" alt="SVG preview" class="svg-img" data-svg-full="${escapeHtml(sanitized)}">
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
                     data-model-slug="${escapeHtml(modelSlug)}">
@@ -193,33 +361,39 @@ const LeaderboardModule = (() => {
         return 0;
     }
 
-    function sanitizeSvg(svgStr) {
-        return svgStr
-            .replace(/<\?xml[^?]*\?>/gi, '')
-            .replace(/<!DOCTYPE[^>]*>/gi, '')
-            .replace(/\s+xmlns\s*=\s*["']/g, ' xmlns="')
-            .replace(/<svg(?![^>]*xmlns)/, '<svg xmlns="http://www.w3.org/2000/svg"');
-    }
-
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
         listContainer.innerHTML = '';
 
         let displayModels = [...modelsData];
 
-        if (currentSort === 'date') {
+        if (searchQuery) {
+            displayModels = displayModels.filter(m => m.name.toLowerCase().includes(searchQuery));
+        }
+
+        if (currentCriteriaSort >= 0) {
+            const ci = currentCriteriaSort;
+            displayModels.sort((a, b) => {
+                const aScore = (a.variants && a.variants[0] && a.variants[0].scores && a.variants[0].scores[ci]) || 0;
+                const bScore = (b.variants && b.variants[0] && b.variants[0].scores && b.variants[0].scores[ci]) || 0;
+                return bScore - aScore;
+            });
+        } else if (currentSort === 'date') {
             displayModels.sort((a, b) => {
                 const aDate = (a.variants && a.variants[0] && a.variants[0].date) || '';
                 const bDate = (b.variants && b.variants[0] && b.variants[0].date) || '';
-                const aParsed = parseDate(aDate);
-                const bParsed = parseDate(bDate);
-                return bParsed - aParsed;
+                return parseDate(bDate) - parseDate(aDate);
             });
         }
 
         if (currentTop !== 'all') displayModels = displayModels.slice(0, parseInt(currentTop));
 
-        displayModels.forEach((model, index) => {
+        const totalItems = displayModels.length;
+        const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIdx = startIdx + ITEMS_PER_PAGE;
+        const pageModels = displayModels.slice(startIdx, endIdx);
+
+        pageModels.forEach((model, index) => {
             const groups = {};
             (model.variants || []).forEach((v) => {
                 if (!groups[v.label]) groups[v.label] = [];
@@ -246,7 +420,7 @@ const LeaderboardModule = (() => {
 
             const authorLine = model.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${model.author}</span>` : '';
 
-            const rank = index + 1;
+            const rank = startIdx + index + 1;
             const rankDisplay = String(rank).padStart(2, '0');
 
             const dateSelectorHtml = `
@@ -262,7 +436,7 @@ const LeaderboardModule = (() => {
             const svgBlock = renderSvgBlock(model);
 
             const card = document.createElement('div');
-            card.className = "glass-panel p-8 border border-white/20 hover:border-white/50 transition-colors duration-300 flex flex-col bg-black/60 benchmark-card group";
+            card.className = "glass-panel p-8 border border-white/20 hover:border-white/50 transition-colors duration-300 flex flex-col bg-black/60 benchmark-card card-enter group";
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
@@ -293,21 +467,16 @@ const LeaderboardModule = (() => {
             `;
 
             if (model.svg_content) {
-                const sanitized = sanitizeSvg(model.svg_content);
-                const svgIframe = card.querySelector('.svg-iframe');
-                if (svgIframe) {
-                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
-                    svgIframe.srcdoc = iframeSrc;
-                    const handler = (e) => {
-                        if (e.data && e.data.type === 'svg-open' && e.data.id === svgIframe.id) {
-                            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
-                            const blob = new Blob([html], { type: 'text/html' });
-                            const url = URL.createObjectURL(blob);
-                            window.open(url, '_blank');
-                            URL.revokeObjectURL(url);
-                        }
-                    };
-                    window.addEventListener('message', handler);
+                const svgImg = card.querySelector('.svg-img');
+                if (svgImg) {
+                    svgImg.addEventListener('click', () => {
+                        const fullSvg = svgImg.getAttribute('data-svg-full');
+                        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${fullSvg}</body></html>`;
+                        const blob = new Blob([html], { type: 'text/html' });
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        URL.revokeObjectURL(url);
+                    });
                 }
                 const downloadBtn = card.querySelector('.svg-download-btn');
                 if (downloadBtn) {
@@ -420,6 +589,26 @@ const LeaderboardModule = (() => {
             listContainer.appendChild(card);
         });
 
+        renderPagination(totalItems);
+        animateCards();
+        animateBars();
+    }
+
+    function animateCards() {
+        const cards = document.querySelectorAll('.benchmark-card.card-enter');
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            cards.forEach(c => c.classList.remove('card-enter'));
+            return;
+        }
+        cards.forEach((card, i) => {
+            setTimeout(() => {
+                card.classList.remove('card-enter');
+                card.classList.add('card-visible');
+            }, i * 80);
+        });
+    }
+
+    function animateBars() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
