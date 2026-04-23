@@ -40,8 +40,9 @@ const LeaderboardModule = (() => {
         });
     }
 
-    function selectDifficulty(diff) {
+    async function selectDifficulty(diff) {
         currentDifficulty = diff;
+        currentPromptId = null;
         document.querySelectorAll('#difficulty-filters .difficulty-tab').forEach(b => {
             b.classList.toggle('active', b.getAttribute('data-difficulty') === diff);
         });
@@ -49,9 +50,8 @@ const LeaderboardModule = (() => {
         renderTopFilters();
         const prompts = promptsCache[currentDifficulty] || [];
         if (prompts.length > 0) {
-            selectPrompt(prompts[0].id);
+            await selectPrompt(prompts[0].id);
         } else {
-            currentPromptId = null;
             hidePromptDisplay();
             clearBenchmarkList();
             showEmptyState();
@@ -104,7 +104,8 @@ const LeaderboardModule = (() => {
     async function selectPrompt(promptId) {
         currentPromptId = promptId;
         document.querySelectorAll('#prompt-filters .top-filter-btn').forEach(b => {
-            b.classList.toggle('active', parseInt(b.getAttribute('data-prompt-id')) === promptId);
+            const bid = isNaN(b.getAttribute('data-prompt-id')) ? b.getAttribute('data-prompt-id') : parseInt(b.getAttribute('data-prompt-id'));
+            b.classList.toggle('active', bid === promptId);
         });
         const prompts = promptsCache[currentDifficulty] || [];
         const prompt = prompts.find(p => p.id === promptId);
@@ -121,9 +122,8 @@ const LeaderboardModule = (() => {
 
     function selectTop(count) {
         currentTop = count;
-        document.querySelectorAll('#top-filters .top-filter-btn').forEach(b => {
-            b.classList.toggle('active', b.getAttribute('data-count') === count);
-        });
+        currentSort = 'score';
+        renderTopFilters();
         renderBenchmarkList();
     }
 
