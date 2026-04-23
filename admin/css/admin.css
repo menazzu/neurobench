@@ -1,29 +1,30 @@
 .admin-nav-btn {
     padding: 8px 16px;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid transparent;
     background: transparent;
     color: rgba(255, 255, 255, 0.35);
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: left;
+    border-radius: 12px;
 }
 .admin-nav-btn:hover {
     color: rgba(255, 255, 255, 0.7);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.03);
 }
 .admin-nav-btn.active {
-    background: rgba(255, 255, 255, 0.08);
+    background: #0c0c0c;
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: #161616;
 }
 
 .admin-difficulty-btn {
     padding: 6px 16px;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.15em;
@@ -32,6 +33,7 @@
     color: rgba(255, 255, 255, 0.35);
     cursor: pointer;
     transition: all 0.3s ease;
+    border-radius: 12px;
 }
 .admin-difficulty-btn:hover {
     color: rgba(255, 255, 255, 0.7);
@@ -44,15 +46,16 @@
 }
 
 .admin-prompt-card {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #161616;
+    background: #0c0c0c;
     padding: 16px 20px;
-    font-family: 'Space Mono', monospace;
+    font-family: 'Geist Mono', monospace;
     font-size: 11px;
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.55);
     transition: all 0.3s ease;
     position: relative;
+    border-radius: 20px;
 }
 .admin-prompt-card:hover {
     border-color: rgba(255,255,255,0.3);
@@ -61,7 +64,7 @@
 }
 
 select option {
-    background: #0A0A0A;
+    background: #0c0c0c;
     color: #ffffff;
 }
 
@@ -69,3 +72,24 @@ select option {
 .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+.matte-card {
+    background: #0c0c0c;
+    border: 1px solid #161616;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.5s ease;
+}
+
+.text-shiny {
+    background: linear-gradient(90deg, #444 0%, #fff 50%, #444 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 8s linear infinite;
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}

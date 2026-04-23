@@ -185,7 +185,7 @@ const LeaderboardModule = (() => {
                         <span>${c}</span>
                         <span class="text-white font-bold transition-opacity duration-300 score-val" data-ci="${ci}">${score.toFixed(1)} / 10</span>
                     </div>
-                    <div class="h-[18px] w-full bg-black/40 border border-white/20 relative overflow-hidden">
+                    <div class="h-[18px] w-full bg-black/40 border border-border relative overflow-hidden">
                         <div class="hatching-fill absolute top-0 left-0 h-full w-0 transition-all duration-[1.5s] cubic-bezier(0.19, 1, 0.22, 1) score-bar" data-ci="${ci}" data-target="${pct}%"></div>
                     </div>
                 </div>
@@ -206,7 +206,7 @@ const LeaderboardModule = (() => {
         const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-white/20 overflow-hidden" style="width:220px;height:220px;">
+                <div class="svg-viewer-box border border-border overflow-hidden" style="width:220px;height:220px;">
                     <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;"></iframe>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
@@ -295,18 +295,18 @@ const LeaderboardModule = (() => {
                         Дата теста: <span class="text-white ml-1 date-display-span transition-opacity duration-300">${activeVariant.date}</span>
                         <svg class="w-3 h-3 text-white date-chevron transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div class="date-dropdown-menu absolute z-50 top-full mt-2 left-0 w-max min-w-full bg-[#0A0A0A] border border-white/20 shadow-lg opacity-0 invisible transition-all duration-200 transform translate-y-[-10px] overflow-hidden"></div>
+                    <div class="date-dropdown-menu absolute z-50 top-full mt-2 left-0 w-max min-w-full bg-surface border border-border shadow-lg opacity-0 invisible transition-all duration-200 transform translate-y-[-10px] overflow-hidden"></div>
                 </div>
             `;
 
             const svgBlock = renderSvgBlock(model);
 
             const card = document.createElement('div');
-            card.className = "glass-panel p-8 border border-white/20 hover:border-white/50 transition-colors duration-300 flex flex-col bg-black/60 benchmark-card group";
+            card.className = "matte-card p-8 border border-border hover:border-white/50 transition-colors duration-300 flex flex-col bg-surface benchmark-card group";
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
-                    <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-white/20 pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
+                    <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-border pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
                         <span class="text-[10px] font-mono text-white/30 group-hover:text-white/50 transition-colors tracking-widest mb-1">#${rankDisplay}</span>
                         <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
@@ -323,7 +323,7 @@ const LeaderboardModule = (() => {
                             <span class="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
                             <span class="font-title text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
                             ${svgBlock}
-                            <div class="absolute left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-[#0A0A0A] border border-white/20 p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                            <div class="absolute left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-surface border border-border p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
                                 <span class="text-white mt-1 block">(Сумма 5) × 1.8 = Max 90</span>
                             </div>

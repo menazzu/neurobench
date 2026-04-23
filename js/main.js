@@ -14,8 +14,6 @@ async function trackVisit() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    ShaderModule.init();
-
     await LeaderboardModule.load();
     trackVisit();
 

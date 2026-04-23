@@ -9,7 +9,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
@@ -17,10 +17,16 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        black: '#050505',
+                        surface: '#0c0c0c',
+                        border: '#161616',
+                    },
                     fontFamily: {
-                        mono: ['"Space Mono"', 'monospace'],
-                        title: ['"Syncopate"', 'sans-serif'],
-                    }
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"Geist Mono"', 'monospace'],
+                        title: ['Inter', 'sans-serif'],
+                    },
                 }
             }
         }
@@ -30,24 +36,50 @@
 </head>
 <body class="antialiased min-h-screen flex flex-col">
 
-    <canvas id="glcanvas"></canvas>
+    <canvas id="ascii-canvas"></canvas>
 
-    <div class="fixed top-0 left-0 w-full p-6 flex justify-between items-center z-50 pointer-events-none font-mono text-xs tracking-widest uppercase">
-        <div class="logo-badge">
-            <span class="glitch gradient-text font-title font-bold text-base" data-text="NeuroBench">NeuroBench</span>
+    <svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1">
+        <defs>
+            <filter id="gooey-filter">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="custom-cursor" id="cursor"></div>
+
+    <nav class="fixed top-8 w-full z-[100] px-6">
+        <div class="max-w-4xl mx-auto nav-pill flex justify-between items-center p-2">
+            <div class="flex items-center gap-3 pl-4">
+                <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                    <svg width="18" height="18" viewBox="0 0 40 40" fill="none">
+                        <rect x="8" y="8" width="8" height="24" fill="black" />
+                        <path d="M16 8L24 32H32L24 8H16Z" fill="black" />
+                    </svg>
+                </div>
+                <span class="font-bold tracking-tighter text-lg uppercase">NeuroBench</span>
+            </div>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#about" class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity">О проекте</a>
+                <a href="#leaderboard" class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity">Лидерборд</a>
+            </div>
         </div>
-    </div>
+    </nav>
 
-    <header class="min-h-[70vh] flex flex-col justify-center items-center text-center px-4 relative z-10">
-        <h1 class="font-title text-6xl md:text-8xl lg:text-9xl font-bold uppercase tracking-tighter text-white mb-6 title-glow">
-            Neuro<br>Bench
-        </h1>
-        <p class="font-mono text-xs md:text-sm tracking-[0.3em] uppercase text-gray-300 border border-gray-500 px-6 py-3 bg-black/50 backdrop-blur-sm">
+    <header class="min-h-[70vh] flex flex-col justify-center items-center text-center px-4 relative z-10 pt-32">
+        <div class="gooey-text mb-8">
+            <h1 id="hero-title" class="font-title text-6xl md:text-[110px] font-medium tracking-tightest leading-[0.9] text-white">
+                NeuroBench
+            </h1>
+        </div>
+        <p id="hero-desc" class="text-lg md:text-xl opacity-30 max-w-2xl mx-auto leading-relaxed mb-16 font-mono">
             Generative Line Art Evaluation
         </p>
     </header>
 
-    <div class="relative z-10 w-full overflow-hidden bg-black/70 border-y border-white/20 py-4 mb-20 backdrop-blur-md">
+    <div class="relative z-10 w-full overflow-hidden border-y border-border py-4 mb-20">
         <div class="marquee-track flex gap-8 items-center text-xs tracking-[0.2em] uppercase font-mono text-gray-400">
             <span>op-art line distortion</span> <span class="text-white/30">✦</span>
             <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
@@ -68,57 +100,69 @@
         </div>
     </div>
 
-    <section class="max-w-7xl mx-auto px-4 py-8 relative z-10 text-white font-mono mb-24">
-        <h2 class="font-title text-3xl md:text-4xl uppercase tracking-widest mb-12 border-b border-white/20 pb-4 text-center md:text-left title-glow">Что проверяют SVG?</h2>
+    <section id="about" class="py-40 px-6 max-w-7xl mx-auto relative z-10 text-white font-mono">
+        <h2 class="font-title text-3xl md:text-4xl uppercase tracking-widest mb-12 border-b border-border pb-4 text-center md:text-left text-shiny">Что проверяют SVG?</h2>
         
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <div class="glass-panel p-8 md:p-12 border border-white/20 flex flex-col gap-10">
-                <div>
-                    <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">1.</span> Истинное воображение (Zero Data Contamination)</h3>
-                    <p class="text-sm text-gray-400 leading-relaxed">Проверка на SE(2) инвариантность (повороты и сдвиги). При повороте все координаты кардинально меняются, исключая возможность «зубрежки». Успех строго доказывает, что модель оперирует внутренним пониманием пространства и топологии объектов, а не просто копирует шаблоны.</p>
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                 </div>
-                <div>
-                    <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">2.</span> Аудит математической логики</h3>
-                    <p class="text-sm text-gray-400 leading-relaxed">В отличие от легко прощаемого текста, малейшая ошибка в цифре SVG-координаты мгновенно рушит контур. Генерация графики требует точных алгебраических вычислений, что беспощадно разоблачает поверхностную «иллюзию рассуждения» (pattern matching) современных LLM.</p>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">3.</span> Преодоление пиксельных генераторов</h3>
-                    <p class="text-sm text-gray-400 leading-relaxed">Нейросети вроде Midjourney отлично генерируют текстуры через вероятностные пиксели, но проваливают точный инженерный структурный подсчет. SVG требует строгого, детерминированного планирования связей, узлов и соблюдения точной DOM-иерархии.</p>
-                </div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">1.</span> Истинное воображение (Zero Data Contamination)</h3>
+                <p class="text-sm opacity-30 leading-relaxed">Проверка на SE(2) инвариантность (повороты и сдвиги). При повороте все координаты кардинально меняются, исключая возможность «зубрежки». Успех строго доказывает, что модель оперирует внутренним пониманием пространства и топологии объектов, а не просто копирует шаблоны.</p>
             </div>
-            
-            <div class="flex flex-col gap-10">
-                <div class="glass-panel p-8 md:p-12 border border-white/20 flex-grow flex flex-col gap-10">
-                    <div>
-                        <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">4.</span> Прокачка общего интеллекта (Symbolic Tuning)</h3>
-                        <p class="text-sm text-gray-400 leading-relaxed">Обучение ИИ на строгих графах и точных координатах парадоксально улучшает логику даже в сферах, не связанных с графикой. Это дает скачкообразный рост метрик на математических бенчмарках (GSM8K) и устраняет слепые пятна бестелесного восприятия ИИ.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="text-gray-500 mr-2">5.</span> Валидация строгого исполняемого кода</h3>
-                        <p class="text-sm text-gray-400 leading-relaxed">SVG — это XML-разметка с жестким синтаксисом. Успех доказывает способность модели выдавать безупречный структурированный код для UI/UX. Это делает логику "зрения" ИИ полностью прозрачной, интерпретируемой и применимой для автоматизации frontend-разработки.</p>
-                    </div>
+
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg>
                 </div>
-                
-                <div class="glass-panel p-8 border border-white/20 bg-white/5 relative overflow-hidden group">
-                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                    </div>
-                    <h3 class="text-xs font-bold uppercase tracking-[0.2em] mb-2 text-white/50">Суть метода</h3>
-                    <p class="text-sm text-gray-300 uppercase tracking-widest leading-loose">SVG — это мост между текстовой LLM генерацией и физическим конструированием визуального мира.</p>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">2.</span> Аудит математической логики</h3>
+                <p class="text-sm opacity-30 leading-relaxed">В отличие от легко прощаемого текста, малейшая ошибка в цифре SVG-координаты мгновенно рушит контур. Генерация графики требует точных алгебраических вычислений, что беспощадно разоблачает поверхностную «иллюзию рассуждения» (pattern matching) современных LLM.</p>
+            </div>
+
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
                 </div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">3.</span> Преодоление пиксельных генераторов</h3>
+                <p class="text-sm opacity-30 leading-relaxed">Нейросети вроде Midjourney отлично генерируют текстуры через вероятностные пиксели, но проваливают точный инженерный структурный подсчет. SVG требует строгого, детерминированного планирования связей, узлов и соблюдения точной DOM-иерархии.</p>
+            </div>
+
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">4.</span> Прокачка общего интеллекта (Symbolic Tuning)</h3>
+                <p class="text-sm opacity-30 leading-relaxed">Обучение ИИ на строгих графах и точных координатах парадоксально улучшает логику даже в сферах, не связанных с графикой. Это дает скачкообразный рост метрик на математических бенчмарках (GSM8K) и устраняет слепые пятна бестелесного восприятия ИИ.</p>
+            </div>
+
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+                </div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">5.</span> Валидация строгого исполняемого кода</h3>
+                <p class="text-sm opacity-30 leading-relaxed">SVG — это XML-разметка с жестким синтаксисом. Успех доказывает способность модели выдавать безупречный структурированный код для UI/UX. Это делает логику «зрения» ИИ полностью прозрачной, интерпретируемой и применимой для автоматизации frontend-разработки.</p>
+            </div>
+
+            <div class="matte-card p-8 group hover:border-white/20 transition-all duration-500 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="0.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                </div>
+                <h3 class="text-xs font-bold uppercase tracking-[0.2em] mb-2 opacity-30">Суть метода</h3>
+                <p class="text-sm opacity-50 uppercase tracking-widest leading-loose">SVG — это мост между текстовой LLM генерацией и физическим конструированием визуального мира.</p>
             </div>
             
         </div>
     </section>
 
-    <main class="max-w-7xl mx-auto px-4 py-16 relative z-10 text-white font-mono w-full mt-auto mb-20">
+    <main id="leaderboard" class="max-w-7xl mx-auto px-6 py-40 relative z-10 text-white font-mono w-full">
         
-        <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-white/20 pb-6 gap-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-border pb-6 gap-6">
             <div class="flex-1">
-                <h2 class="font-title text-3xl md:text-5xl uppercase tracking-widest glitch gradient-text mb-4" data-text="Лидерборд">Лидерборд</h2>
-                <a href="https://t.me/codercodex" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mb-5 text-gray-400 hover:text-white transition-colors duration-300 group" style="text-decoration: none;">
-                    <svg class="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                <h2 class="font-title text-3xl md:text-5xl uppercase tracking-widest text-shiny mb-4">Лидерборд</h2>
+                <a href="https://t.me/codercodex" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mb-5 opacity-30 hover:opacity-100 transition-opacity duration-300 group" style="text-decoration: none;">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                     <span class="text-sm tracking-[0.2em] uppercase font-mono">@codercodex</span>
                 </a>
                 <div class="flex flex-col gap-4">
@@ -130,12 +174,12 @@
         </div>
 
         <div id="prompt-display" class="mb-8 hidden">
-            <div class="glass-panel p-6 border border-white/20">
-                <p class="text-xs uppercase tracking-[0.2em] text-gray-500 mb-3">Промпт</p>
+            <div class="matte-card p-6 border border-border">
+                <p class="text-xs uppercase tracking-[0.2em] opacity-20 mb-3">Промпт</p>
                 <div class="relative">
-                    <p id="prompt-text" class="text-sm text-gray-300 leading-relaxed" style="white-space: pre-wrap;"></p>
-                    <div id="prompt-text-fade" class="hidden absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[rgba(10,10,10,0.95)] to-transparent pointer-events-none"></div>
-                    <button id="prompt-expand-btn" class="hidden text-xs uppercase tracking-widest text-gray-400 hover:text-white transition-colors mt-2 border border-white/15 px-3 py-1.5 bg-white/5 hover:bg-white/10">Открыть полностью</button>
+                    <p id="prompt-text" class="text-sm opacity-40 leading-relaxed" style="white-space: pre-wrap;"></p>
+                    <div id="prompt-text-fade" class="hidden absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-surface to-transparent pointer-events-none"></div>
+                    <button id="prompt-expand-btn" class="hidden text-xs uppercase tracking-widest opacity-30 hover:opacity-100 transition-opacity mt-2 border border-white/15 px-3 py-1.5 bg-white/5 hover:bg-white/10">Открыть полностью</button>
                 </div>
             </div>
         </div>
@@ -148,8 +192,78 @@
 
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/shader.js"></script>
     <script src="js/leaderboard.js"></script>
     <script src="js/main.js"></script>
+
+    <script type="module">
+        import { animate, inView, stagger } from "https://esm.sh/framer-motion";
+        import gsap from "https://esm.sh/gsap";
+
+        const canvas = document.getElementById('ascii-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, columns, rows;
+        const fontSize = 15;
+        const chars = " .:-=+*#%@".split("");
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            columns = Math.ceil(width / fontSize);
+            rows = Math.ceil(height / fontSize);
+        }
+
+        let mouse = { x: -1000, y: -1000 };
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+        function drawASCII(time) {
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, width, height);
+            ctx.font = fontSize + 'px "Geist Mono"';
+            ctx.textAlign = 'center';
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < columns; x++) {
+                    const charX = x * fontSize;
+                    const charY = y * fontSize;
+                    const dist = Math.hypot(charX - mouse.x, charY - mouse.y);
+                    const mouseEffect = Math.max(0, 1 - dist / 400);
+                    const noise = Math.sin(x * 0.3 + time * 0.0005) * Math.cos(y * 0.3 + time * 0.0005);
+                    const brightness = Math.min(chars.length - 1, Math.floor((noise * 0.5 + 0.5 + mouseEffect * 0.7) * chars.length));
+                    ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + mouseEffect * 0.12})`;
+                    ctx.fillText(chars[brightness], charX, charY);
+                }
+            }
+            requestAnimationFrame(drawASCII);
+        }
+        init();
+        window.addEventListener('resize', init);
+        requestAnimationFrame(drawASCII);
+
+        const cursor = document.getElementById('cursor');
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
+        });
+
+        const title = document.getElementById('hero-title');
+        const text = title.innerText;
+        title.innerText = '';
+        text.split('').forEach(char => {
+            const span = document.createElement('span');
+            span.innerText = char === ' ' ? '\u00A0' : char;
+            span.className = 'letter';
+            title.appendChild(span);
+        });
+
+        window.onload = () => {
+            animate(".letter", { opacity: 1, y: [20, 0], filter: ["blur(10px)", "blur(0px)"] }, { delay: stagger(0.03), duration: 0.8 });
+            animate("#hero-desc", { opacity: 0.3, y: [20, 0] }, { delay: 0.8, duration: 1 });
+        };
+
+        document.querySelectorAll('.matte-card').forEach(card => {
+            inView(card, (info) => {
+                animate(info.target, { opacity: [0, 1], y: [40, 0] }, { duration: 0.8 });
+            });
+        });
+    </script>
 </body>
 </html>

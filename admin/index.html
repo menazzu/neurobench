@@ -9,7 +9,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
@@ -17,10 +17,16 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        black: '#050505',
+                        surface: '#0c0c0c',
+                        border: '#161616',
+                    },
                     fontFamily: {
-                        mono: ['"Space Mono"', 'monospace'],
-                        title: ['"Syncopate"', 'sans-serif'],
-                    }
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"Geist Mono"', 'monospace'],
+                        title: ['Inter', 'sans-serif'],
+                    },
                 }
             }
         }
@@ -28,18 +34,18 @@
 
     <link rel="stylesheet" href="css/admin.css">
 </head>
-<body class="bg-[#050505] text-white antialiased min-h-screen font-mono">
+<body class="bg-black text-white antialiased min-h-screen font-mono">
 
     <div id="auth-screen" class="min-h-screen flex items-center justify-center">
-        <div class="w-full max-w-sm p-8 border border-white/20 bg-black/80">
-            <h1 class="font-title text-2xl uppercase tracking-widest text-center mb-8">NeuroBench Admin</h1>
+        <div class="w-full max-w-sm p-8 matte-card">
+            <h1 class="font-title text-2xl uppercase tracking-widest text-center mb-8 text-shiny">NeuroBench Admin</h1>
             <form id="login-form" class="flex flex-col gap-4">
                 <input type="email" id="login-email" placeholder="Email" required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 transition-colors">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/50 transition-colors rounded-xl">
                 <input type="password" id="login-password" placeholder="Password" required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 transition-colors">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-white/30 outline-none focus:border-white/50 transition-colors rounded-xl">
                 <button type="submit"
-                    class="w-full bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">
+                    class="w-full bg-white text-black py-3 text-[10px] uppercase tracking-widest font-bold rounded-full hover:scale-105 transition-transform">
                     Войти
                 </button>
                 <p id="login-error" class="text-red-400 text-xs text-center hidden"></p>
@@ -48,16 +54,16 @@
     </div>
 
     <div id="admin-screen" class="hidden min-h-screen">
-        <nav class="border-b border-white/20 px-6 py-4 flex justify-between items-center bg-black/80">
-            <h1 class="font-title text-lg uppercase tracking-widest">NeuroBench Admin</h1>
+        <nav class="border-b border-border px-6 py-4 flex justify-between items-center bg-surface">
+            <h1 class="font-title text-lg uppercase tracking-widest text-shiny">NeuroBench Admin</h1>
             <div class="flex items-center gap-4">
-                <span id="admin-email" class="text-xs text-gray-400"></span>
-                <button id="logout-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors">Выйти</button>
+                <span id="admin-email" class="text-xs opacity-30"></span>
+                <button id="logout-btn" class="text-[10px] uppercase tracking-widest border border-border px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors">Выйти</button>
             </div>
         </nav>
 
         <div class="flex">
-            <aside class="w-56 min-h-[calc(100vh-56px)] border-r border-white/20 p-4 flex flex-col gap-2">
+            <aside class="w-56 min-h-[calc(100vh-56px)] border-r border-border p-4 flex flex-col gap-2">
                 <button class="admin-nav-btn active" data-section="prompts">Промпты</button>
                 <button class="admin-nav-btn" data-section="models">Модели</button>
                 <button class="admin-nav-btn" data-section="stats">Статистика</button>
@@ -67,8 +73,8 @@
 
                 <section id="section-prompts" class="admin-section">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-title text-xl uppercase tracking-widest">Промпты</h2>
-                        <button id="add-prompt-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors">+ Добавить</button>
+                        <h2 class="font-title text-xl uppercase tracking-widest text-shiny">Промпты</h2>
+                        <button id="add-prompt-btn" class="text-[10px] uppercase tracking-widest border border-border px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors">+ Добавить</button>
                     </div>
                     <div class="flex gap-2 mb-4">
                         <button class="admin-difficulty-btn active" data-diff="easy">Лёгкие</button>
@@ -80,12 +86,12 @@
 
                 <section id="section-models" class="admin-section hidden">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-title text-xl uppercase tracking-widest">Модели</h2>
-                        <button id="add-model-btn" class="text-xs uppercase tracking-widest border border-white/20 px-4 py-2 hover:bg-white/10 transition-colors">+ Добавить</button>
+                        <h2 class="font-title text-xl uppercase tracking-widest text-shiny">Модели</h2>
+                        <button id="add-model-btn" class="text-[10px] uppercase tracking-widest border border-border px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors">+ Добавить</button>
                     </div>
                     <div class="flex gap-2 mb-4">
-                        <label class="text-xs uppercase tracking-widest text-gray-400 mr-2 self-center">Промпт:</label>
-                        <select id="models-prompt-filter" class="bg-white/5 border border-white/20 px-3 py-2 text-xs text-white outline-none focus:border-white/50">
+                        <label class="text-xs uppercase tracking-widest opacity-30 mr-2 self-center">Промпт:</label>
+                        <select id="models-prompt-filter" class="bg-surface border border-border px-3 py-2 text-xs text-white outline-none focus:border-white/50 rounded-xl">
                             <option value="all">Все</option>
                         </select>
                     </div>
@@ -93,10 +99,10 @@
                 </section>
 
                 <section id="section-stats" class="admin-section hidden">
-                    <h2 class="font-title text-xl uppercase tracking-widest mb-6">Статистика</h2>
+                    <h2 class="font-title text-xl uppercase tracking-widest text-shiny mb-6">Статистика</h2>
                     <div id="stats-grid" class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8"></div>
-                    <div class="border border-white/20 p-6">
-                        <h3 class="text-xs uppercase tracking-widest text-gray-400 mb-4">Просмотры за 30 дней</h3>
+                    <div class="matte-card p-6">
+                        <h3 class="text-xs uppercase tracking-widest opacity-30 mb-4">Просмотры за 30 дней</h3>
                         <div id="stats-chart" class="h-48 flex items-end gap-1"></div>
                     </div>
                 </section>
@@ -105,7 +111,7 @@
         </div>
 
         <div id="modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
-            <div id="modal-content" class="w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-white/20 bg-[#0A0A0A] p-8 custom-scrollbar">
+            <div id="modal-content" class="w-full max-w-2xl max-h-[85vh] overflow-y-auto matte-card p-8 custom-scrollbar">
             </div>
         </div>
     </div>

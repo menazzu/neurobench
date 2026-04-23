@@ -88,7 +88,7 @@ const AdminApp = (() => {
                     <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">${p.name ? escapeHtml(p.name) : 'Промпт #' + (i + 1)} (id: ${p.id})</span>
                     <div class="admin-prompt-text-wrap relative overflow-hidden" style="max-height:none;">
                         <span class="admin-prompt-text text-sm leading-relaxed" style="color: rgba(200,200,210,0.9); white-space: pre-wrap; display: block;">${escapeHtml(p.text)}</span>
-                        <div class="admin-prompt-fade hidden absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[rgba(0,0,0,0.9)] to-transparent pointer-events-none"></div>
+                        <div class="admin-prompt-fade hidden absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-surface to-transparent pointer-events-none"></div>
                     </div>
                     <button class="admin-prompt-toggle-btn hidden text-[9px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors mt-1 border border-white/15 px-2 py-1 bg-white/5 hover:bg-white/10 cursor-pointer">Открыть полностью</button>
                 </div>
@@ -195,7 +195,7 @@ const AdminApp = (() => {
             <form id="model-form" class="flex flex-col gap-4">
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">Промпт *</span>
-                    <select name="prompt_id" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                    <select name="prompt_id" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                         <option value="">Выберите промпт</option>
                         ${promptsOptions}
                     </select>
@@ -203,41 +203,41 @@ const AdminApp = (() => {
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">Название модели *</span>
                     <input name="name" placeholder="Gemini 3.1 Pro" required
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 </label>
                 <input name="author" placeholder="Автор (опционально)"
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <div class="border border-white/20 p-4">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                <div class="border border-border p-4">
                     <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Пространство (подмодель)</p>
                     <input name="space" placeholder="AI Studio, Claude.ai, ChatGPT..." required
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
                     <input name="test_date" type="text" placeholder="Дата теста (напр. 07.06.2026)" required
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
                     <div class="grid grid-cols-5 gap-2 mt-2">
                         <input name="s0" type="number" step="0.1" min="0" max="10" placeholder="Визуал" required
-                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
+                            class="w-full bg-surface border border-border px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
                         <input name="s1" type="number" step="0.1" min="0" max="10" placeholder="Анимация" required
-                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
+                            class="w-full bg-surface border border-border px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
                         <input name="s2" type="number" step="0.1" min="0" max="10" placeholder="Креатив" required
-                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
+                            class="w-full bg-surface border border-border px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
                         <input name="s3" type="number" step="0.1" min="0" max="10" placeholder="Код" required
-                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
+                            class="w-full bg-surface border border-border px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
                         <input name="s4" type="number" step="0.1" min="0" max="10" placeholder="Детали" required
-                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
+                            class="w-full bg-surface border border-border px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">
                     </div>
                 </div>
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">SVG результат</span>
                     <div class="flex gap-2">
-                        <input type="file" id="svg-file-input" accept=".svg" class="text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:border file:border-white/20 file:bg-white/5 file:text-white file:text-xs file:uppercase file:tracking-widest file:cursor-pointer">
-                        <button type="button" id="svg-paste-btn" class="text-[10px] uppercase tracking-widest border border-white/20 px-3 py-2 bg-white/5 hover:bg-white/10 transition-colors">Вставить код</button>
+                        <input type="file" id="svg-file-input" accept=".svg" class="text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:border file:border-border file:bg-white/5 file:text-white file:text-xs file:uppercase file:tracking-widest file:cursor-pointer">
+                        <button type="button" id="svg-paste-btn" class="text-[10px] uppercase tracking-widest border border-border px-3 py-2 bg-white/5 hover:bg-white/10 transition-colors">Вставить код</button>
                     </div>
                     <textarea name="svg_content" id="svg-content-area" rows="4" placeholder="SVG-код или загрузите файл..." style="display:none"
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y font-mono text-xs"></textarea>
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y font-mono text-xs"></textarea>
                 </label>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Сохранить</button>
-                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
+                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-border py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
                 </div>
             </form>
         `);
@@ -298,17 +298,17 @@ const AdminApp = (() => {
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Добавить промпт</h3>
             <form id="prompt-form" class="flex flex-col gap-4">
                 <input name="name" placeholder="Название (необязательно, напр. «Волны»)" 
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <select name="difficulty" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                <select name="difficulty" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                     <option value="easy" ${currentDifficulty === 'easy' ? 'selected' : ''}>Лёгкий</option>
                     <option value="medium" ${currentDifficulty === 'medium' ? 'selected' : ''}>Средний</option>
                     <option value="hard" ${currentDifficulty === 'hard' ? 'selected' : ''}>Сложный</option>
                 </select>
                 <textarea name="text" rows="8" placeholder="Текст промпта..." required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y"></textarea>
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y"></textarea>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Сохранить</button>
-                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
+                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-border py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
                 </div>
             </form>
         `);
@@ -365,37 +365,37 @@ const AdminApp = (() => {
             <form id="model-edit-form" class="flex flex-col gap-4">
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">Промпт *</span>
-                    <select name="prompt_id" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                    <select name="prompt_id" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                         ${promptsOptions}
                     </select>
                 </label>
                 <input name="name" value="${model.name || ''}" placeholder="Название модели" required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <input name="author" value="${model.author || ''}" placeholder="Автор (опционально)"
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <div class="border border-white/20 p-4">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                <div class="border border-border p-4">
                     <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Пространство (подмодель)</p>
                     <input name="space" value="${firstVariant.label || ''}" placeholder="AI Studio, Claude.ai..." required
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
                     <input name="test_date" type="text" value="${firstVariant.date || ''}" placeholder="Дата теста" required
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
                     <div class="grid grid-cols-5 gap-2 mt-2">
                         ${[0,1,2,3,4].map(ci => `<input name="s${ci}" type="number" step="0.1" min="0" max="10" value="${firstVariant.scores ? firstVariant.scores[ci] : ''}" placeholder="${['Визуал','Анимация','Креатив','Код','Детали'][ci]}" required
-                            class="w-full bg-white/5 border border-white/20 px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">`).join('')}
+                            class="w-full bg-surface border border-border px-2 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-white/50">`).join('')}
                     </div>
                 </div>
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">SVG результат</span>
                     <div class="flex gap-2">
-                        <input type="file" id="svg-file-input-edit" accept=".svg" class="text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:border file:border-white/20 file:bg-white/5 file:text-white file:text-xs file:uppercase file:tracking-widest file:cursor-pointer">
-                        <button type="button" id="svg-paste-btn-edit" class="text-[10px] uppercase tracking-widest border border-white/20 px-3 py-2 bg-white/5 hover:bg-white/10 transition-colors">Вставить код</button>
+                        <input type="file" id="svg-file-input-edit" accept=".svg" class="text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:border file:border-border file:bg-white/5 file:text-white file:text-xs file:uppercase file:tracking-widest file:cursor-pointer">
+                        <button type="button" id="svg-paste-btn-edit" class="text-[10px] uppercase tracking-widest border border-border px-3 py-2 bg-white/5 hover:bg-white/10 transition-colors">Вставить код</button>
                     </div>
                     <textarea name="svg_content" id="svg-content-area-edit" rows="4" placeholder="SVG-код или загрузите файл..." style="${model.svg_content ? '' : 'display:none'}"
-                        class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y font-mono text-xs">${model.svg_content || ''}</textarea>
+                        class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y font-mono text-xs">${model.svg_content || ''}</textarea>
                 </label>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Обновить</button>
-                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
+                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-border py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
                 </div>
             </form>
         `);
@@ -453,17 +453,17 @@ const AdminApp = (() => {
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать промпт</h3>
             <form id="prompt-edit-form" class="flex flex-col gap-4">
                 <input name="name" value="${prompt.name || ''}" placeholder="Название (необязательно, напр. «Волны»)" 
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <select name="difficulty" required class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white outline-none focus:border-white/50">
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
+                <select name="difficulty" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                     <option value="easy" ${prompt.difficulty === 'easy' ? 'selected' : ''}>Лёгкий</option>
                     <option value="medium" ${prompt.difficulty === 'medium' ? 'selected' : ''}>Средний</option>
                     <option value="hard" ${prompt.difficulty === 'hard' ? 'selected' : ''}>Сложный</option>
                 </select>
                 <textarea name="text" rows="8" required
-                    class="w-full bg-white/5 border border-white/20 px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y">${prompt.text}</textarea>
+                    class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 resize-y">${prompt.text}</textarea>
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Обновить</button>
-                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-white/20 py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
+                    <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-border py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
                 </div>
             </form>
         `);
@@ -525,7 +525,7 @@ const AdminApp = (() => {
             const pct = (d.count / maxCount) * 100;
             const label = d.date.slice(5);
             return `<div class="flex flex-col items-center flex-1 min-w-0" title="${d.date}: ${d.count}">
-                <div class="w-full bg-white/10 hover:bg-white/20 transition-colors relative" style="height:${Math.max(pct, 2)}%">
+                <div class="w-full bg-white/10 hover:bg-white/10 transition-colors relative" style="height:${Math.max(pct, 2)}%">
                     <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-gray-500 whitespace-nowrap">${d.count}</span>
                 </div>
                 <span class="text-[7px] text-gray-600 mt-1 truncate w-full text-center">${label}</span>
