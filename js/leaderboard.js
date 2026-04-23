@@ -48,14 +48,9 @@ const LeaderboardModule = (() => {
         });
         renderPromptFilters();
         renderTopFilters();
-        const prompts = promptsCache[currentDifficulty] || [];
-        if (prompts.length > 0) {
-            selectPrompt(prompts[0].id);
-        } else {
-            hidePromptDisplay();
-            clearBenchmarkList();
-            showEmptyState();
-        }
+        hidePromptDisplay();
+        clearBenchmarkList();
+        showEmptyState();
     }
 
     function renderPromptFilters() {
@@ -114,16 +109,8 @@ const LeaderboardModule = (() => {
 
     async function loadModels() {
         if (!currentPromptId) { clearBenchmarkList(); showEmptyState(); return; }
-        const listContainer = document.getElementById('benchmark-list');
-        listContainer.style.opacity = '0';
-        listContainer.style.transform = 'translateY(12px)';
         try { modelsData = await Api.getModelsByPrompt(currentPromptId); } catch { modelsData = []; }
         renderBenchmarkList();
-        requestAnimationFrame(() => {
-            listContainer.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            listContainer.style.opacity = '1';
-            listContainer.style.transform = 'translateY(0)';
-        });
         hideEmptyState();
     }
 
@@ -138,18 +125,10 @@ const LeaderboardModule = (() => {
     const PROMPT_MAX_LINES = 5;
 
     function showPromptDisplay(text) {
-        const container = document.getElementById('prompt-display');
         const el = document.getElementById('prompt-text');
         const fade = document.getElementById('prompt-text-fade');
         const btn = document.getElementById('prompt-expand-btn');
-        container.classList.remove('hidden');
-        container.style.opacity = '0';
-        container.style.transform = 'translateY(8px)';
-        requestAnimationFrame(() => {
-            container.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
-            container.style.opacity = '1';
-            container.style.transform = 'translateY(0)';
-        });
+        document.getElementById('prompt-display').classList.remove('hidden');
         el.textContent = text;
         el.style.maxHeight = '';
         el.style.overflow = '';
