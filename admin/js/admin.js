@@ -50,6 +50,7 @@ const AdminApp = (() => {
         document.getElementById('admin-email').textContent = email || '';
         loadPrompts();
         loadModels();
+        loadStats();
     }
 
     async function loadPrompts() {
@@ -439,6 +440,50 @@ const AdminApp = (() => {
                 alert('Ошибка обновления: ' + err.message);
             }
         });
+    }
+
+    async function loadStats() {
+        let stats;
+        try { stats = await Api.getStats(); } catch { stats = null; }
+        renderStats(stats);
+    }
+
+    function renderStats(stats) {
+        const grid = document.getElementById('stats-grid');
+        if (!stats) {
+            grid.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest col-span-4">Не удалось загрузить статистику</p>';
+            return;
+        }
+        const cards = [
+            { label: 'Онлайн сейчас', value: stats.onlineNow, color: 'text-green-400' },
+            { label: 'Просмотры сегодня', value: stats.viewsToday, color: 'text-blue-400' },
+            { label: 'Всего просмотров', value: stats.totalViews, color: 'text-white' },
+            { label: 'Уникальных за 30д', value: stats.monthlyUnique, color: 'text-purple-400' }
+        ];
+        grid.innerHTML = cards.map(c => `
+            <div class="admin-prompt-card text-center py-6">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">${c.label}</p>
+                <p class="font-title text-3xl font-bold ${c.color}">${c.value}</p>
+            </div>
+        `).join('');
+
+        const chart = document.getElementById('stats-chart');
+        const daily = stats.daily || [];
+        if (daily.length === 0) {
+            chart.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest w-full text-center self-center">Нет данных</p>';
+            return;
+        }
+        const maxCount = Math.max(...daily.map(d => d.count), 1);
+        chart.innerHTML = daily.map(d => {
+            const pct = (d.count / maxCount) * 100;
+            const label = d.date.slice(5);
+            return `<div class="flex flex-col items-center flex-1 min-w-0" title="${d.date}: ${d.count}">
+                <div class="w-full bg-white/10 hover:bg-white/20 transition-colors relative" style="height:${Math.max(pct, 2)}%">
+                    <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-gray-500 whitespace-nowrap">${d.count}</span>
+                </div>
+                <span class="text-[7px] text-gray-600 mt-1 truncate w-full text-center">${label}</span>
+            </div>`;
+        }).join('');
     }
 
     function init() {
