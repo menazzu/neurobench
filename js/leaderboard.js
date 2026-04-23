@@ -252,16 +252,6 @@ const LeaderboardModule = (() => {
 
         let displayModels = [...modelsData];
 
-        if (currentSort === 'date') {
-            displayModels.sort((a, b) => {
-                const aDate = (a.variants && a.variants[0] && a.variants[0].date) || '';
-                const bDate = (b.variants && b.variants[0] && b.variants[0].date) || '';
-                const aParsed = parseDate(aDate);
-                const bParsed = parseDate(bDate);
-                return bParsed - aParsed;
-            });
-        }
-
         if (currentTop !== 'all') displayModels = displayModels.slice(0, parseInt(currentTop));
 
         displayModels.forEach((model, index) => {
@@ -274,14 +264,28 @@ const LeaderboardModule = (() => {
             const uniqueLabels = Object.keys(groups);
             if (uniqueLabels.length === 0) return;
 
-            let activeLabel = uniqueLabels[0];
-            let activeVariant = groups[activeLabel][0];
+            let activeLabel;
+            if (currentSort === 'date') {
+                activeLabel = uniqueLabels.reduce((best, lbl) => {
+                    const bestDate = Math.max(...groups[best].map(v => parseDate(v.date)));
+                    const lblDate = Math.max(...groups[lbl].map(v => parseDate(v.date)));
+                    return lblDate > bestDate ? lbl : best;
+                }, uniqueLabels[0]);
+            } else {
+                activeLabel = uniqueLabels[0];
+            }
+            let activeVariant;
+            if (currentSort === 'date') {
+                activeVariant = [...groups[activeLabel]].sort((a, b) => parseDate(b.date) - parseDate(a.date))[0];
+            } else {
+                activeVariant = groups[activeLabel][0];
+            }
             let scoresHtml = renderBars(activeVariant);
 
             let variantsHtml = '';
             if (uniqueLabels.length > 1) {
                 const pills = uniqueLabels.map((lbl, i) => {
-                    const activeClass = i === 0 ? 'bg-[#F2F2F2] text-black border-[#F2F2F2]' : 'bg-transparent text-gray-400 border-white/20 hover:border-white/50 hover:text-white cursor-pointer';
+                    const activeClass = lbl === activeLabel ? 'bg-[#F2F2F2] text-black border-[#F2F2F2]' : 'bg-transparent text-gray-400 border-white/20 hover:border-white/50 hover:text-white cursor-pointer';
                     return `<button class="variant-pill px-3 py-1.5 text-[10px] uppercase tracking-wider border transition-all duration-200 ${activeClass}" data-label="${lbl}">${lbl}</button>`;
                 }).join('');
                 variantsHtml = `<div class="flex flex-wrap gap-1.5 mb-1 variant-pills-container">${pills}</div>`;
