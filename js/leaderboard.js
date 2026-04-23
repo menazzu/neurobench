@@ -240,7 +240,7 @@ const LeaderboardModule = (() => {
         const svgId = 'svg-preview-' + model.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
-                <div class="svg-viewer-box border border-border overflow-hidden" style="width:220px;height:220px;">
+                <div class="svg-viewer-box border border-border overflow-hidden" style="max-width:220px;width:100%;aspect-ratio:1/1;">
                     <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;"></iframe>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
@@ -369,28 +369,25 @@ const LeaderboardModule = (() => {
             const svgBlock = renderSvgBlock(model);
 
             const card = document.createElement('div');
-            card.className = "matte-card p-8 border border-border hover:border-white/50 transition-colors duration-300 flex flex-col bg-surface benchmark-card group";
+            card.className = "matte-card p-4 sm:p-8 border border-border hover:border-white/50 transition-colors duration-300 flex flex-col bg-surface benchmark-card group";
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
-                    <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-border pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
+                    <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-border pb-4 sm:pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
                         <span class="text-[10px] font-mono text-white/30 group-hover:text-white/50 transition-colors tracking-widest mb-1">#${rankDisplay}</span>
-                        <h3 class="font-title text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
+                        <h3 class="font-title text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${model.name}</h3>
                         ${dateSelectorHtml}
                         <div class="mt-2">${variantsHtml} ${authorLine}</div>
                     </div>
-                    <div class="w-full lg:flex-1 flex flex-col md:flex-row items-center justify-between mt-6 lg:mt-0 lg:pl-10 group/bracket">
-                        <div class="flex-grow flex flex-col gap-y-5 w-full scores-container self-stretch justify-center">
+                    <div class="w-full lg:flex-1 flex flex-col items-center justify-between mt-4 sm:mt-6 lg:mt-0 lg:pl-10 group/bracket">
+                        <div class="flex-grow flex flex-col gap-y-4 sm:gap-y-5 w-full scores-container self-stretch justify-center">
                             ${scoresHtml}
                         </div>
-                        <svg preserveAspectRatio="none" viewBox="0 0 36 100" class="hidden md:block w-[28px] mx-6 text-white/40 stroke-current transition-colors duration-500 group-hover/bracket:text-white/80 self-stretch" fill="none">
-                            <path d="M 2 1 C 18 1 18 8 18 20 L 18 42 C 18 48 18 49 34 50 C 18 51 18 52 18 58 L 18 80 C 18 92 18 99 2 99" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <div class="flex-shrink-0 relative z-30 group/score text-center md:text-left mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
-                            <span class="text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
-                            <span class="font-title text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
+                        <div class="flex-shrink-0 relative z-30 group/score text-center mt-6 sm:mt-8 lg:mt-0 lg:w-56 lg:text-left lg:pl-2 lg:pr-12">
+                            <span class="text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
+                            <span class="font-title text-[48px] sm:text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
                             ${svgBlock}
-                            <div class="absolute left-1/2 md:left-0 -translate-x-1/2 md:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-surface border border-border p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                            <div class="absolute left-1/2 lg:left-0 -translate-x-1/2 lg:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-surface border border-border p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
                                 <span class="text-white mt-1 block">(Сумма 5) × 1.8 = Max 90</span>
                             </div>
@@ -403,7 +400,7 @@ const LeaderboardModule = (() => {
                 const sanitized = sanitizeSvg(model.svg_content);
                 const svgIframe = card.querySelector('.svg-iframe');
                 if (svgIframe) {
-                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:220px;height:220px;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
+                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:100%;height:100%;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
                     svgIframe.srcdoc = iframeSrc;
                     const handler = (e) => {
                         if (e.data && e.data.type === 'svg-open' && e.data.id === svgIframe.id) {
