@@ -87,7 +87,7 @@ const AdminApp = (() => {
                 <div class="flex-1 min-w-0">
                     <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">${p.name ? escapeHtml(p.name) : 'Промпт #' + (i + 1)} (id: ${p.id})</span>
                     <div class="admin-prompt-text-container relative">
-                        <span class="admin-prompt-text text-sm leading-relaxed" style="color: rgba(200,200,210,0.9);">${escapeHtml(p.text)}</span>
+                        <span class="admin-prompt-text text-sm leading-relaxed" style="color: rgba(200,200,210,0.9); white-space: pre-wrap; display: block;">${escapeHtml(p.text)}</span>
                         <div class="admin-prompt-fade hidden absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[rgba(0,0,0,0.9)] to-transparent pointer-events-none"></div>
                         <button class="admin-prompt-expand-btn hidden text-[9px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors mt-1 border border-white/15 px-2 py-1 bg-white/5 hover:bg-white/10 cursor-pointer">Открыть полностью</button>
                     </div>
@@ -99,8 +99,11 @@ const AdminApp = (() => {
             </div>
         `).join('');
         container.querySelectorAll('.admin-prompt-text').forEach(el => {
-            const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
-            const maxH = lineHeight * PROMPT_MAX_LINES;
+            const cs = getComputedStyle(el);
+            const lh = parseFloat(cs.lineHeight);
+            const fontSize = parseFloat(cs.fontSize);
+            const effectiveLH = isNaN(lh) ? fontSize * 1.5 : lh;
+            const maxH = effectiveLH * PROMPT_MAX_LINES;
             if (el.scrollHeight > maxH + 4) {
                 const container_ = el.parentElement;
                 const fade = container_.querySelector('.admin-prompt-fade');

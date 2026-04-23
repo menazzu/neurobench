@@ -135,8 +135,11 @@ const LeaderboardModule = (() => {
         fade.classList.add('hidden');
         btn.classList.add('hidden');
         requestAnimationFrame(() => {
-            const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
-            const maxH = lineHeight * PROMPT_MAX_LINES;
+            const cs = getComputedStyle(el);
+            const lh = parseFloat(cs.lineHeight);
+            const fontSize = parseFloat(cs.fontSize);
+            const effectiveLH = isNaN(lh) ? fontSize * 1.5 : lh;
+            const maxH = effectiveLH * PROMPT_MAX_LINES;
             if (el.scrollHeight > maxH + 4) {
                 el.style.maxHeight = maxH + 'px';
                 el.style.overflow = 'hidden';
