@@ -48,8 +48,6 @@
         </defs>
     </svg>
 
-    <div class="custom-cursor" id="cursor"></div>
-
     <nav class="fixed top-8 w-full z-[100] px-6">
         <div class="max-w-4xl mx-auto nav-pill flex justify-between items-center p-2">
             <div class="flex items-center gap-3 pl-4">
@@ -61,7 +59,7 @@
                 </div>
                 <span class="font-bold tracking-tighter text-lg uppercase">NeuroBench</span>
             </div>
-            <div class="hidden md:flex items-center gap-8">
+            <div class="hidden md:flex items-center gap-8 -ml-4">
                 <a href="#about" class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity">О проекте</a>
                 <a href="#leaderboard" class="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity">Лидерборд</a>
             </div>
@@ -81,22 +79,22 @@
 
     <div class="relative z-10 w-full overflow-hidden border-y border-border py-4 mb-20">
         <div class="marquee-track flex gap-8 items-center text-xs tracking-[0.2em] uppercase font-mono text-gray-400">
-            <span>op-art line distortion</span> <span class="text-white/30">✦</span>
-            <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
-            <span>contour warp</span> <span class="text-white/30">✦</span>
-            <span>radial guilloché</span> <span class="text-white/30">✦</span>
-            <span>hypnotic spiral op-art</span> <span class="text-white/30">✦</span>
-            <span>concentric line pattern</span> <span class="text-white/30">✦</span>
-            <span>contour hatching</span> <span class="text-white/30">✦</span>
-            <span>engraving style</span> <span class="text-white/30">✦</span>
-            <span>op-art line distortion</span> <span class="text-white/30">✦</span>
-            <span>wavy moiré topography</span> <span class="text-white/30">✦</span>
-            <span>contour warp</span> <span class="text-white/30">✦</span>
-            <span>radial guilloché</span> <span class="text-white/30">✦</span>
-            <span>hypnotic spiral op-art</span> <span class="text-white/30">✦</span>
-            <span>concentric line pattern</span> <span class="text-white/30">✦</span>
-            <span>contour hatching</span> <span class="text-white/30">✦</span>
-            <span>engraving style</span> <span class="text-white/30">✦</span>
+            <span>SVG бенчмарк</span> <span class="text-white/30">✦</span>
+            <span>оценка генерации</span> <span class="text-white/30">✦</span>
+            <span>визуальный интеллект ИИ</span> <span class="text-white/30">✦</span>
+            <span>строгий код</span> <span class="text-white/30">✦</span>
+            <span>пространственное мышление</span> <span class="text-white/30">✦</span>
+            <span>zero contamination</span> <span class="text-white/30">✦</span>
+            <span>символический тюнинг</span> <span class="text-white/30">✦</span>
+            <span>математическая логика</span> <span class="text-white/30">✦</span>
+            <span>SVG бенчмарк</span> <span class="text-white/30">✦</span>
+            <span>оценка генерации</span> <span class="text-white/30">✦</span>
+            <span>визуальный интеллект ИИ</span> <span class="text-white/30">✦</span>
+            <span>строгий код</span> <span class="text-white/30">✦</span>
+            <span>пространственное мышление</span> <span class="text-white/30">✦</span>
+            <span>zero contamination</span> <span class="text-white/30">✦</span>
+            <span>символический тюнинг</span> <span class="text-white/30">✦</span>
+            <span>математическая логика</span> <span class="text-white/30">✦</span>
         </div>
     </div>
 
@@ -238,11 +236,6 @@
         init();
         window.addEventListener('resize', init);
         requestAnimationFrame(drawASCII);
-
-        const cursor = document.getElementById('cursor');
-        window.addEventListener('mousemove', (e) => {
-            gsap.to(cursor, { x: e.clientX, y: e.clientY, duration: 0.1 });
-        });
 
         const title = document.getElementById('hero-title');
         const text = title.innerText;

@@ -42,15 +42,20 @@ const LeaderboardModule = (() => {
 
     function selectDifficulty(diff) {
         currentDifficulty = diff;
-        currentPromptId = null;
         document.querySelectorAll('#difficulty-filters .difficulty-tab').forEach(b => {
             b.classList.toggle('active', b.getAttribute('data-difficulty') === diff);
         });
         renderPromptFilters();
         renderTopFilters();
-        hidePromptDisplay();
-        clearBenchmarkList();
-        showEmptyState();
+        const prompts = promptsCache[currentDifficulty] || [];
+        if (prompts.length > 0) {
+            selectPrompt(prompts[0].id);
+        } else {
+            currentPromptId = null;
+            hidePromptDisplay();
+            clearBenchmarkList();
+            showEmptyState();
+        }
     }
 
     function renderPromptFilters() {
