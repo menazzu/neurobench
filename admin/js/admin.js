@@ -451,10 +451,16 @@ const AdminApp = (() => {
     async function loadStats() {
         let stats;
         try { stats = await Api.getStats(); } catch { stats = null; }
-        renderStats(stats);
+        let commitSha = '';
+        try {
+            const resp = await fetch('https://api.github.com/repos/menazzu/neurobench/commits?per_page=1');
+            const data = await resp.json();
+            if (data && data[0] && data[0].sha) commitSha = data[0].sha.slice(0, 7);
+        } catch {}
+        renderStats(stats, commitSha);
     }
 
-    function renderStats(stats) {
+    function renderStats(stats, commitSha) {
         const grid = document.getElementById('stats-grid');
         if (!stats) {
             grid.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest col-span-4">Не удалось загрузить статистику</p>';
@@ -464,7 +470,8 @@ const AdminApp = (() => {
             { label: 'Онлайн сейчас', value: stats.onlineNow, color: 'text-green-400' },
             { label: 'Просмотры сегодня', value: stats.viewsToday, color: 'text-blue-400' },
             { label: 'Всего просмотров', value: stats.totalViews, color: 'text-white' },
-            { label: 'Уникальных за 30д', value: stats.monthlyUnique, color: 'text-purple-400' }
+            { label: 'Уникальных за 30д', value: stats.monthlyUnique, color: 'text-purple-400' },
+            { label: 'Коммит', value: commitSha || '—', color: 'text-yellow-400' }
         ];
         grid.innerHTML = cards.map(c => `
             <div class="admin-prompt-card text-center py-6">
