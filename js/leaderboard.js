@@ -379,11 +379,14 @@ const LeaderboardModule = (() => {
                         ${dateSelectorHtml}
                         <div class="mt-2">${variantsHtml} ${authorLine}</div>
                     </div>
-                    <div class="w-full lg:flex-1 flex flex-col items-center justify-between mt-4 sm:mt-6 lg:mt-0 lg:pl-10 group/bracket">
+                    <div class="w-full lg:flex-1 flex flex-col md:flex-row items-center justify-between mt-4 sm:mt-6 lg:mt-0 lg:pl-10 group/bracket">
                         <div class="flex-grow flex flex-col gap-y-4 sm:gap-y-5 w-full scores-container self-stretch justify-center">
                             ${scoresHtml}
                         </div>
-                        <div class="flex-shrink-0 relative z-30 group/score text-center mt-6 sm:mt-8 lg:mt-0 lg:w-56 lg:text-left lg:pl-2 lg:pr-12">
+                        <svg preserveAspectRatio="none" viewBox="0 0 36 100" class="hidden md:block w-[28px] mx-6 text-white/40 stroke-current transition-colors duration-500 group-hover/bracket:text-white/80 self-stretch" fill="none">
+                            <path d="M 2 1 C 18 1 18 8 18 20 L 18 42 C 18 48 18 49 34 50 C 18 51 18 52 18 58 L 18 80 C 18 92 18 99 2 99" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="flex-shrink-0 relative z-30 group/score text-center md:text-left mt-6 sm:mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
                             <span class="text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
                             <span class="font-title text-[48px] sm:text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeVariant.overall}">${Math.floor(activeVariant.overall)}</span>
                             ${svgBlock}
