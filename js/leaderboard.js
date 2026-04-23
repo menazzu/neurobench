@@ -93,12 +93,16 @@ const LeaderboardModule = (() => {
             btn.addEventListener('click', () => selectTop(t.key));
             container.appendChild(btn);
         });
-        const sortBtn = document.createElement('button');
-        sortBtn.className = 'top-filter-btn sort-btn' + (currentSort === 'date' ? ' active' : '');
-        sortBtn.setAttribute('data-sort', 'date');
-        sortBtn.textContent = 'По дате';
-        sortBtn.addEventListener('click', () => { currentSort = currentSort === 'date' ? 'score' : 'date'; renderTopFilters(); renderBenchmarkList(); });
-        container.appendChild(sortBtn);
+        if (currentTop === 'all') {
+            const sortBtn = document.createElement('button');
+            sortBtn.className = 'top-filter-btn sort-btn' + (currentSort === 'date' ? ' active' : '');
+            sortBtn.setAttribute('data-sort', 'date');
+            sortBtn.textContent = 'По дате';
+            sortBtn.addEventListener('click', () => { currentSort = currentSort === 'date' ? 'score' : 'date'; renderTopFilters(); renderBenchmarkList(); });
+            container.appendChild(sortBtn);
+        } else {
+            currentSort = 'score';
+        }
     }
 
     async function selectPrompt(promptId) {
