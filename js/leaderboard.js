@@ -252,9 +252,20 @@ const LeaderboardModule = (() => {
 
         let displayModels = [...modelsData];
 
+        const scoreRankMap = new Map();
+        modelsData.forEach((m, i) => scoreRankMap.set(m.id, i + 1));
+
+        if (currentSort === 'date') {
+            displayModels.sort((a, b) => {
+                const aDate = (a.variants && a.variants[0] && a.variants[0].date) || '';
+                const bDate = (b.variants && b.variants[0] && b.variants[0].date) || '';
+                return parseDate(bDate) - parseDate(aDate);
+            });
+        }
+
         if (currentTop !== 'all') displayModels = displayModels.slice(0, parseInt(currentTop));
 
-        displayModels.forEach((model, index) => {
+        displayModels.forEach((model) => {
             const groups = {};
             (model.variants || []).forEach((v) => {
                 if (!groups[v.label]) groups[v.label] = [];
@@ -295,7 +306,7 @@ const LeaderboardModule = (() => {
 
             const authorLine = model.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${model.author}</span>` : '';
 
-            const rank = index + 1;
+            const rank = scoreRankMap.get(model.id) || 1;
             const rankDisplay = String(rank).padStart(2, '0');
 
             const dateSelectorHtml = `
