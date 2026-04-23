@@ -122,13 +122,40 @@ const LeaderboardModule = (() => {
         renderBenchmarkList();
     }
 
+    const PROMPT_MAX_LINES = 5;
+
     function showPromptDisplay(text) {
+        const el = document.getElementById('prompt-text');
+        const fade = document.getElementById('prompt-text-fade');
+        const btn = document.getElementById('prompt-expand-btn');
         document.getElementById('prompt-display').classList.remove('hidden');
-        document.getElementById('prompt-text').textContent = text;
+        el.textContent = text;
+        el.style.maxHeight = '';
+        el.style.overflow = '';
+        fade.classList.add('hidden');
+        btn.classList.add('hidden');
+        requestAnimationFrame(() => {
+            const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+            const maxH = lineHeight * PROMPT_MAX_LINES;
+            if (el.scrollHeight > maxH + 4) {
+                el.style.maxHeight = maxH + 'px';
+                el.style.overflow = 'hidden';
+                fade.classList.remove('hidden');
+                btn.classList.remove('hidden');
+                btn.onclick = () => {
+                    el.style.maxHeight = '';
+                    el.style.overflow = '';
+                    fade.classList.add('hidden');
+                    btn.classList.add('hidden');
+                };
+            }
+        });
     }
     function hidePromptDisplay() {
         document.getElementById('prompt-display').classList.add('hidden');
         document.getElementById('prompt-text').textContent = '';
+        document.getElementById('prompt-text-fade').classList.add('hidden');
+        document.getElementById('prompt-expand-btn').classList.add('hidden');
     }
     function showEmptyState() { document.getElementById('empty-state').classList.remove('hidden'); }
     function hideEmptyState() { document.getElementById('empty-state').classList.add('hidden'); }

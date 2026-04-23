@@ -73,6 +73,8 @@ const AdminApp = (() => {
         return allPromptsData.filter(p => p.difficulty === diff);
     }
 
+    const PROMPT_MAX_LINES = 4;
+
     function renderPromptsList() {
         const container = document.getElementById('prompts-list');
         const prompts = getPromptsByDiff(currentDifficulty);
@@ -82,9 +84,13 @@ const AdminApp = (() => {
         }
         container.innerHTML = prompts.map((p, i) => `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                     <span class="text-[10px] text-gray-500 uppercase tracking-widest block mb-2">${p.name ? escapeHtml(p.name) : 'Промпт #' + (i + 1)} (id: ${p.id})</span>
-                    <span class="text-sm text-gray-300 leading-relaxed" style="color: rgba(200,200,210,0.9);">${p.text}</span>
+                    <div class="admin-prompt-text-container relative">
+                        <span class="admin-prompt-text text-sm leading-relaxed" style="color: rgba(200,200,210,0.9);">${escapeHtml(p.text)}</span>
+                        <div class="admin-prompt-fade hidden absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[rgba(0,0,0,0.9)] to-transparent pointer-events-none"></div>
+                        <button class="admin-prompt-expand-btn hidden text-[9px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors mt-1 border border-white/15 px-2 py-1 bg-white/5 hover:bg-white/10 cursor-pointer">Открыть полностью</button>
+                    </div>
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
                     <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editPrompt(${p.id})">Ред.</button>
@@ -92,6 +98,26 @@ const AdminApp = (() => {
                 </div>
             </div>
         `).join('');
+        container.querySelectorAll('.admin-prompt-text').forEach(el => {
+            const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+            const maxH = lineHeight * PROMPT_MAX_LINES;
+            if (el.scrollHeight > maxH + 4) {
+                const container_ = el.parentElement;
+                const fade = container_.querySelector('.admin-prompt-fade');
+                const btn = container_.querySelector('.admin-prompt-expand-btn');
+                el.style.maxHeight = maxH + 'px';
+                el.style.overflow = 'hidden';
+                el.style.display = 'block';
+                fade.classList.remove('hidden');
+                btn.classList.remove('hidden');
+                btn.addEventListener('click', () => {
+                    el.style.maxHeight = '';
+                    el.style.overflow = '';
+                    fade.classList.add('hidden');
+                    btn.classList.add('hidden');
+                });
+            }
+        });
     }
 
     async function loadModels() {
