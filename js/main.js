@@ -63,6 +63,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         retryBtn.addEventListener('click', () => { LeaderboardModule.retry(); });
     }
 
+    try {
+        const resp = await fetch('https://api.github.com/repos/menazzu/neurobench/commits?per_page=1');
+        const data = await resp.json();
+        if (data && data[0] && data[0].sha) {
+            const shaEl = document.getElementById('commit-sha');
+            if (shaEl) shaEl.textContent = data[0].sha.slice(0, 7);
+        }
+    } catch {}
+
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.date-dropdown-container')) {
             document.querySelectorAll('.date-dropdown-menu.visible').forEach(m => {
