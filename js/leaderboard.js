@@ -134,6 +134,7 @@ const LeaderboardModule = (() => {
         el.style.overflow = '';
         fade.classList.add('hidden');
         btn.classList.add('hidden');
+        btn.textContent = 'Открыть полностью';
         requestAnimationFrame(() => {
             const cs = getComputedStyle(el);
             const lh = parseFloat(cs.lineHeight);
@@ -145,11 +146,20 @@ const LeaderboardModule = (() => {
                 el.style.overflow = 'hidden';
                 fade.classList.remove('hidden');
                 btn.classList.remove('hidden');
+                let expanded = false;
                 btn.onclick = () => {
-                    el.style.maxHeight = '';
-                    el.style.overflow = '';
-                    fade.classList.add('hidden');
-                    btn.classList.add('hidden');
+                    expanded = !expanded;
+                    if (expanded) {
+                        el.style.maxHeight = '';
+                        el.style.overflow = '';
+                        fade.classList.add('hidden');
+                        btn.textContent = 'Свернуть';
+                    } else {
+                        el.style.maxHeight = maxH + 'px';
+                        el.style.overflow = 'hidden';
+                        fade.classList.remove('hidden');
+                        btn.textContent = 'Открыть полностью';
+                    }
                 };
             }
         });
