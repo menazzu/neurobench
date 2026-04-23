@@ -53,6 +53,12 @@ const AdminApp = (() => {
         loadStats();
     }
 
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+
     async function loadPrompts() {
         try {
             allPromptsData = await Api.getAllPrompts();
