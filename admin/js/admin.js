@@ -351,6 +351,8 @@ const AdminApp = (() => {
         const model = modelsData.find(m => m.id === id);
         if (!model) return;
 
+        const existingVariants = model.variants || [];
+
         const promptsOptions = allPromptsData.map(p => {
             const diffLabel = p.difficulty === 'easy' ? 'Лёгкий' : p.difficulty === 'medium' ? 'Средний' : 'Сложный';
             const shortText = p.text.length > 50 ? p.text.substring(0, 50) + '...' : p.text;
@@ -358,11 +360,16 @@ const AdminApp = (() => {
             return `<option value="${p.id}" ${selected}>[${diffLabel}] #${p.id} ${shortText}</option>`;
         }).join('');
 
-        const firstVariant = (model.variants && model.variants[0]) || {};
+        const variantOptions = existingVariants.map((v, i) =>
+            `<option value="${i}">${v.label || 'Вариант ' + (i + 1)} (${v.date || '—'})</option>`
+        ).join('');
+        const hasVariants = existingVariants.length > 0;
+        const firstVariant = hasVariants ? existingVariants[0] : {};
 
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать модель</h3>
             <form id="model-edit-form" class="flex flex-col gap-4">
+                <input type="hidden" id="edit-variant-json" value='${escapeHtml(JSON.stringify(existingVariants))}'>
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">Промпт *</span>
                     <select name="prompt_id" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
@@ -374,7 +381,10 @@ const AdminApp = (() => {
                 <input name="author" value="${model.author || ''}" placeholder="Автор (опционально)"
                     class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <div class="border border-border p-4">
-                    <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Пространство (подмодель)</p>
+                    <div class="flex justify-between items-center mb-3">
+                        <p class="text-xs uppercase tracking-widest text-gray-400">Вариант</p>
+                        ${hasVariants ? `<select id="variant-selector" class="bg-surface border border-border px-3 py-1.5 text-xs text-white outline-none focus:border-white/50 rounded-xl"><option value="0">${firstVariant.label || 'Вариант 1'} (${firstVariant.date || '—'})</option>${existingVariants.slice(1).map((v, i) => `<option value="${i + 1}">${v.label || 'Вариант ' + (i + 2)} (${v.date || '—'})</option>`).join('')}<option value="new">+ Новый вариант</option></select>` : ''}
+                    </div>
                     <input name="space" value="${firstVariant.label || ''}" placeholder="AI Studio, Claude.ai..." required
                         class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50 mb-2">
                     <input name="test_date" type="text" value="${firstVariant.date || ''}" placeholder="Дата теста" required
@@ -400,6 +410,24 @@ const AdminApp = (() => {
             </form>
         `);
 
+        const variantSelector = document.getElementById('variant-selector');
+        if (variantSelector) {
+            variantSelector.addEventListener('change', () => {
+                const val = variantSelector.value;
+                const form = document.getElementById('model-edit-form');
+                if (val === 'new') {
+                    form.space.value = '';
+                    form.test_date.value = '';
+                    [0,1,2,3,4].forEach(ci => { form['s' + ci].value = ''; });
+                } else {
+                    const v = existingVariants[parseInt(val)];
+                    form.space.value = v.label || '';
+                    form.test_date.value = v.date || '';
+                    [0,1,2,3,4].forEach(ci => { form['s' + ci].value = v.scores ? v.scores[ci] : ''; });
+                }
+            });
+        }
+
         const svgFileInputEdit = document.getElementById('svg-file-input-edit');
         const svgContentAreaEdit = document.getElementById('svg-content-area-edit');
         const svgPasteBtnEdit = document.getElementById('svg-paste-btn-edit');
@@ -423,19 +451,32 @@ const AdminApp = (() => {
             e.preventDefault();
             const fd = new FormData(e.target);
             const scores = [0,1,2,3,4].map(ci => parseFloat(fd.get('s' + ci)));
-            const overall = (scores.reduce((a, b) => a + b, 0)) * 1.8;
+            const overall = parseFloat((scores.reduce((a, b) => a + b, 0) * 1.8).toFixed(1));
+            const editedVariant = {
+                label: fd.get('space'),
+                date: fd.get('test_date'),
+                scores,
+                overall
+            };
+
+            const selectedIdx = variantSelector ? variantSelector.value : '0';
+            let updatedVariants;
+            if (selectedIdx === 'new') {
+                updatedVariants = [...existingVariants, editedVariant];
+            } else {
+                updatedVariants = [...existingVariants];
+                updatedVariants[parseInt(selectedIdx)] = editedVariant;
+            }
+
+            const bestOverall = Math.max(...updatedVariants.map(v => v.overall || 0));
+
             try {
                 await Api.updateModel(id, {
                     prompt_id: parseInt(fd.get('prompt_id')),
                     name: fd.get('name'),
                     author: fd.get('author') || null,
-                    variants: [{
-                        label: fd.get('space'),
-                        date: fd.get('test_date'),
-                        scores,
-                        overall: parseFloat(overall.toFixed(1))
-                    }],
-                    best_overall: parseFloat(overall.toFixed(1)),
+                    variants: updatedVariants,
+                    best_overall: bestOverall,
                     svg_content: document.getElementById('svg-content-area-edit').value || null
                 });
                 await loadModels();

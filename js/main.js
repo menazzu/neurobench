@@ -17,6 +17,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     await LeaderboardModule.load();
     trackVisit();
 
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuIconOpen = document.getElementById('menu-icon-open');
+    const menuIconClose = document.getElementById('menu-icon-close');
+    if (mobileBtn && mobileMenu) {
+        mobileBtn.addEventListener('click', () => {
+            const isOpen = mobileMenu.classList.contains('open');
+            mobileMenu.classList.toggle('open');
+            mobileMenu.classList.toggle('hidden');
+            menuIconOpen.classList.toggle('hidden');
+            menuIconClose.classList.toggle('hidden');
+        });
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('open');
+                mobileMenu.classList.add('hidden');
+                menuIconOpen.classList.remove('hidden');
+                menuIconClose.classList.add('hidden');
+            });
+        });
+    }
+
+    const searchInput = document.getElementById('model-search');
+    const searchClear = document.getElementById('model-search-clear');
+    if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            const val = searchInput.value.trim();
+            searchClear.classList.toggle('hidden', !val);
+            debounceTimer = setTimeout(() => { LeaderboardModule.setSearch(val); }, 250);
+        });
+    }
+    if (searchClear) {
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClear.classList.add('hidden');
+            LeaderboardModule.setSearch('');
+        });
+    }
+
+    const retryBtn = document.getElementById('error-retry-btn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', () => { LeaderboardModule.retry(); });
+    }
+
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.date-dropdown-container')) {
             document.querySelectorAll('.date-dropdown-menu.visible').forEach(m => {

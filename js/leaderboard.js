@@ -9,15 +9,24 @@ const LeaderboardModule = (() => {
     let currentTop = 'all';
     let currentSort = 'score';
     let modelsData = [];
+    let activeMessageHandlers = [];
+    let searchQuery = '';
 
     async function load() {
+        showLoading();
+        hideError();
         try {
             promptsCache.easy = await Api.getPromptsByDifficulty('easy');
             promptsCache.medium = await Api.getPromptsByDifficulty('medium');
             promptsCache.hard = await Api.getPromptsByDifficulty('hard');
-        } catch {
+        } catch (e) {
             promptsCache = { easy: [], medium: [], hard: [] };
+            hideLoading();
+            showError('Не удалось загрузить промпты. Проверьте подключение.');
+            renderDifficultyFilters();
+            return;
         }
+        hideLoading();
         renderDifficultyFilters();
         selectDifficulty('easy');
     }
@@ -119,7 +128,17 @@ const LeaderboardModule = (() => {
 
     async function loadModels() {
         if (!currentPromptId) { clearBenchmarkList(); showEmptyState(); return; }
-        try { modelsData = await Api.getModelsByPrompt(currentPromptId); } catch { modelsData = []; }
+        showLoading();
+        hideError();
+        try {
+            modelsData = await Api.getModelsByPrompt(currentPromptId);
+        } catch (e) {
+            modelsData = [];
+            hideLoading();
+            showError('Не удалось загрузить модели. Попробуйте позже.');
+            return;
+        }
+        hideLoading();
         renderBenchmarkList();
         hideEmptyState();
     }
@@ -182,6 +201,12 @@ const LeaderboardModule = (() => {
     function showEmptyState() { document.getElementById('empty-state').classList.remove('hidden'); }
     function hideEmptyState() { document.getElementById('empty-state').classList.add('hidden'); }
     function clearBenchmarkList() { document.getElementById('benchmark-list').innerHTML = ''; }
+    function showLoading() { document.getElementById('loading-state').classList.remove('hidden'); }
+    function hideLoading() { document.getElementById('loading-state').classList.add('hidden'); }
+    function showError(msg) { const el = document.getElementById('error-state'); el.classList.remove('hidden'); if (msg) document.getElementById('error-state-text').textContent = msg; }
+    function hideError() { document.getElementById('error-state').classList.add('hidden'); }
+    function showNoResults() { document.getElementById('no-results-state').classList.remove('hidden'); }
+    function hideNoResults() { document.getElementById('no-results-state').classList.add('hidden'); }
 
     function renderBars(variant) {
         let scoresHtml = '';
@@ -252,6 +277,10 @@ const LeaderboardModule = (() => {
 
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
+
+        activeMessageHandlers.forEach(h => window.removeEventListener('message', h));
+        activeMessageHandlers = [];
+
         listContainer.innerHTML = '';
 
         let displayModels = [...modelsData];
@@ -268,6 +297,20 @@ const LeaderboardModule = (() => {
         }
 
         if (currentTop !== 'all') displayModels = displayModels.slice(0, parseInt(currentTop));
+
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            displayModels = displayModels.filter(m =>
+                m.name.toLowerCase().includes(q) ||
+                (m.author && m.author.toLowerCase().includes(q))
+            );
+        }
+
+        hideNoResults();
+        if (displayModels.length === 0 && modelsData.length > 0) {
+            showNoResults();
+            return;
+        }
 
         displayModels.forEach((model) => {
             const groups = {};
@@ -372,6 +415,7 @@ const LeaderboardModule = (() => {
                         }
                     };
                     window.addEventListener('message', handler);
+                    activeMessageHandlers.push(handler);
                 }
                 const downloadBtn = card.querySelector('.svg-download-btn');
                 if (downloadBtn) {
@@ -495,5 +539,5 @@ const LeaderboardModule = (() => {
         document.querySelectorAll('.benchmark-card').forEach(card => observer.observe(card));
     }
 
-    return { load };
+    return { load, setSearch(q) { searchQuery = q; renderBenchmarkList(); }, retry() { load(); } };
 })();
