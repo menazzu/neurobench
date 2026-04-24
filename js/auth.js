@@ -106,41 +106,6 @@ const AuthApp = (() => {
         inviteCode = code;
         showStep(2);
     }
-        const valid = await validateInviteCode(code);
-        if (!valid) return;
-        if (captchaToken && window.TURNSTILE_SITE_KEY) {
-            const btn = document.getElementById('reg-step1-btn');
-            btn.disabled = true;
-            btn.textContent = 'Проверка...';
-            btn.disabled = false;
-            btn.textContent = 'Далее';
-        }
-                inviteCode = code;
-                showStep(2);
-            } catch (err) {
-                console.error('Turnstile verify error:', err);
-                showError('invite-code-error', 'Ошибка проверки капчи');
-                btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
-                    btn.textContent = 'Далее';
-                    if (window.turnstile && turnstileWidgetId !== null) {
-                        turnstile.reset(turnstileWidgetId);
-                        captchaToken = null;
-                    }
-                    return;
-                }
-            } catch (err) {
-                console.error('Turnstile verify error:', err);
-                showError('invite-code-error', 'Ошибка проверки капчи');
-                btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
-                btn.textContent = 'Далее';
-                return;
-            }
-            btn.disabled = false;
-            btn.textContent = 'Далее';
-        }
-        inviteCode = code;
-        showStep(2);
-    }
 
     async function handleStep2(e) {
         e.preventDefault();
@@ -263,9 +228,7 @@ const AuthApp = (() => {
 
     function copyCode(codeElId) {
         const code = document.getElementById(codeElId).textContent;
-        navigator.clipboard.writeText(code).then(() => {
-            const btn = document.getElementById(codeElId).replace('value', '');
-        }).catch(() => {});
+        navigator.clipboard.writeText(code).catch(() => {});
     }
 
     async function handleLogin(e) {
