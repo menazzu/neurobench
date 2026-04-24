@@ -558,48 +558,22 @@ const AdminApp = (() => {
             container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет инвайт-кодов</p>';
             return;
         }
-        container.innerHTML = filtered.map(i => `
-            <div class="admin-prompt-card flex justify-between items-start gap-4">
-                <div class="flex-1">
-                    <span class="text-gray-200 font-bold font-mono tracking-widest">${escapeHtml(i.code)}</span>
-                    <span class="ml-3 text-xs ${i.used_by ? 'text-red-400/60' : 'text-green-400/60'}">${i.used_by ? 'Использован' : 'Свободен'}</span>
-                    ${i.is_admin_code ? '<span class="ml-2 text-xs text-yellow-400/60">Админский</span>' : ''}
-                    <span class="text-xs text-gray-500 block mt-1">Создан: ${new Date(i.created_at).toLocaleString('ru')}${i.used_at ? ' | Использован: ' + new Date(i.used_at).toLocaleString('ru') : ''}</span>
-                </div>
-                <div class="flex-shrink-0 flex gap-2">
-                    ${!i.used_by ? `<button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteInvite('${i.id}')">Удал.</button>` : ''}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function renderProfilesList() {
-        const container = document.getElementById('users-list');
-        if (!container) return;
-        if (profilesData.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет пользователей</p>';
-            return;
-        }
-        container.innerHTML = profilesData.map(p => {
-            const tgName = [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ');
-            const tgLine = p.telegram_username
-                ? `<span class="text-blue-400/70 ml-2">@${escapeHtml(p.telegram_username)}</span>`
-                : (tgName ? `<span class="text-blue-400/70 ml-2">${escapeHtml(tgName)}</span>` : '');
+        container.innerHTML = filtered.map(i => {
+            const maxLabel = i.max_uses === null ? '∞' : i.max_uses;
+            const statusText = i.max_uses === null
+                ? (i.use_count > 0 ? 'Используется' : 'Свободен')
+                : (i.use_count >= i.max_uses ? 'Исчерпан' : `${i.use_count}/${i.max_uses}`);
+            const statusColor = (i.max_uses !== null && i.use_count >= i.max_uses) ? 'text-red-400/60' : (i.use_count > 0 ? 'text-yellow-400/60' : 'text-green-400/60');
             return `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
-                    <span class="text-gray-200 font-bold">${escapeHtml(p.email)}</span>${tgLine}
-                    <span class="ml-3 text-xs ${p.is_verified ? 'text-green-400/60' : 'text-yellow-400/60'}">${p.is_verified ? 'Верифицирован' : 'Не верифицирован'}</span>
-                    <span class="text-xs text-gray-500 block mt-1">
-                        ID: ${p.user_id.slice(0, 8)}...
-                        ${p.telegram_id ? '| TG ID: ' + p.telegram_id : ''}
-                        | Инвайт сгенерирован: ${p.has_generated_invite ? 'Да' : 'Нет'}
-                        | Создан: ${new Date(p.created_at).toLocaleString('ru')}
-                    </span>
+                    <span class="text-gray-200 font-bold font-mono tracking-widest">${escapeHtml(i.code)}</span>
+                    <span class="ml-3 text-xs ${statusColor}">${statusText}</span>
+                    ${i.is_admin_code ? '<span class="ml-2 text-xs text-yellow-400/60">Админский</span>' : ''}
+                    <span class="text-xs text-gray-500 block mt-1">Лимит: ${maxLabel} | Создан: ${new Date(i.created_at).toLocaleString('ru')}${i.used_at ? ' | Посл. использование: ' + new Date(i.used_at).toLocaleString('ru') : ''}</span>
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
-                    ${p.has_generated_invite ? `<button class="text-blue-400/60 hover:text-blue-400 transition-colors text-xs" onclick="AdminApp.resetInviteLimit('${p.user_id}')">Сбросить лимит</button>` : ''}
-                    <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteUser('${p.user_id}')">Удал.</button>
+                    ${(i.max_uses === null || i.use_count < i.max_uses) ? `<button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteInvite('${i.id}')">Удал.</button>` : ''}
                 </div>
             </div>
         `}).join('');
@@ -755,8 +729,11 @@ const AdminApp = (() => {
         document.getElementById('add-model-btn').addEventListener('click', showAddModelForm);
         document.getElementById('add-prompt-btn').addEventListener('click', showAddPromptForm);
         document.getElementById('add-invite-btn').addEventListener('click', async () => {
+            const maxUses = prompt('Максимальное количество активаций (пусто = безлимит):', '10');
+            if (maxUses === null) return;
             try {
-                const code = await Api.adminGenerateInviteCode();
+                const pMaxUses = maxUses.trim() === '' ? null : parseInt(maxUses);
+                const code = await Api.adminGenerateInviteCode(pMaxUses);
                 if (!code) throw new Error('Нет прав');
                 await loadInvites();
             } catch (err) {

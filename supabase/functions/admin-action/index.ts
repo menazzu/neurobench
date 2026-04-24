@@ -28,13 +28,11 @@ Deno.serve(async (req: Request) => {
 
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
 
-    const { data: userData, error: userError } = await userClient.auth.getUser()
+    const token = authHeader.replace('Bearer ', '')
+    const { data: userData, error: userError } = await adminClient.auth.getUser(token)
     if (userError || !userData.user) {
-      return jsonResponse({ error: 'Invalid token' }, 401)
+      return jsonResponse({ error: 'Invalid token: ' + (userError?.message || 'unknown') }, 401)
     }
 
     const adminId = userData.user.id
@@ -64,6 +62,21 @@ Deno.serve(async (req: Request) => {
       if (!profile) {
         return jsonResponse({ error: 'User not found' }, 404)
       }
+
+      await adminClient
+        .from('profiles')
+        .update({ used_invite_code_id: null, generated_invite_code_id: null })
+        .eq('user_id', user_id)
+
+      await adminClient
+        .from('invite_code_uses')
+        .delete()
+        .eq('user_id', user_id)
+
+      await adminClient
+        .from('invite_codes')
+        .update({ created_by: null })
+        .eq('created_by', user_id)
 
       const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id)
       if (deleteError) {

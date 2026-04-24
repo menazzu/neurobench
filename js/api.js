@@ -246,10 +246,10 @@ const Api = (() => {
         return data || [];
     }
 
-    async function adminGenerateInviteCode() {
+    async function adminGenerateInviteCode(maxUses) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.rpc('admin_generate_invite_code');
+        const { data, error } = await client.rpc('admin_generate_invite_code', { p_max_uses: maxUses || null });
         if (error) throw error;
         return data;
     }

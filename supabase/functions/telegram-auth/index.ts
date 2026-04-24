@@ -113,12 +113,11 @@ Deno.serve(async (req: Request) => {
 
     const { data: validCode } = await adminClient
       .from('invite_codes')
-      .select('id')
+      .select('id, max_uses, use_count')
       .eq('code', invite_code.toUpperCase())
-      .is('used_by', null)
       .maybeSingle()
 
-    if (!validCode) {
+    if (!validCode || (validCode.max_uses !== null && validCode.use_count >= validCode.max_uses)) {
       return jsonResponse({ error: 'Инвайт-код недействителен или уже использован' }, 400)
     }
 
@@ -152,8 +151,12 @@ Deno.serve(async (req: Request) => {
 
     await adminClient
       .from('invite_codes')
-      .update({ used_by: newUser.id, used_at: new Date().toISOString() })
+      .update({ use_count: validCode.use_count + 1, used_by: newUser.id, used_at: new Date().toISOString() })
       .eq('id', validCode.id)
+
+    await adminClient
+      .from('invite_code_uses')
+      .insert({ invite_code_id: validCode.id, user_id: newUser.id })
 
     const { data: sessionData, error: sessionError } = await anonClient.auth.signInWithPassword({ email, password })
 
