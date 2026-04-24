@@ -124,23 +124,36 @@ const Api = (() => {
     }
 
     async function telegramAuth(authData, inviteCode) {
-        const client = getClient();
-        if (!client) throw new Error('Supabase not configured');
+        const supabaseUrl = window.SUPABASE_URL;
+        const anonKey = window.SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !anonKey) throw new Error('Supabase not configured');
+
         const body = { auth_data: authData };
         if (inviteCode) body.invite_code = inviteCode;
-        const { data, error } = await client.functions.invoke('telegram-auth', { body });
-        if (error) {
-            const err = new Error(error.message || 'Authentication failed');
-            const fnError = (typeof error === 'object' && error.context) ? error.context : null;
-            if (fnError && fnError.needs_invite) err.needsInvite = true;
-            throw err;
+
+        let result;
+        try {
+            const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': anonKey,
+                    'Authorization': `Bearer ${anonKey}`,
+                },
+                body: JSON.stringify(body)
+            });
+            result = await response.json();
+            if (!response.ok) {
+                const err = new Error(result.error || 'Authentication failed');
+                err.needsInvite = result.needs_invite || false;
+                throw err;
+            }
+        } catch (e) {
+            if (e.needsInvite) throw e;
+            throw new Error('Не удалось подключиться к серверу аутентификации. Проверьте что Edge Function telegram-auth задеплоена в Supabase Dashboard.');
         }
-        if (data && data.needs_invite) {
-            const err = new Error(data.error || 'Invite code required');
-            err.needsInvite = true;
-            throw err;
-        }
-        return data;
+
+        return result;
     }
 
     async function setSession(accessToken, refreshToken) {
@@ -274,14 +287,31 @@ const Api = (() => {
     }
 
     async function adminDeleteUser(userId) {
+        const supabaseUrl = window.SUPABASE_URL;
+        const anonKey = window.SUPABASE_ANON_KEY;
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.functions.invoke('admin-action', {
-            body: { action: 'delete_user', user_id: userId }
-        });
-        if (error) throw new Error(error.message || 'Delete failed');
-        if (data && data.error) throw new Error(data.error);
-        return data;
+        const { data: sessionData } = await client.auth.getSession();
+        if (!sessionData) throw new Error('Not authenticated');
+
+        let result;
+        try {
+            const response = await fetch(`${supabaseUrl}/functions/v1/admin-action`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': anonKey,
+                    'Authorization': `Bearer ${sessionData.access_token}`,
+                },
+                body: JSON.stringify({ action: 'delete_user', user_id: userId })
+            });
+            result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Delete failed');
+        } catch (e) {
+            if (e.message && !e.message.includes('подключиться')) throw e;
+            throw new Error('Не удалось подключиться к серверу. Проверьте что Edge Function admin-action задеплоена в Supabase Dashboard.');
+        }
+        return result;
     }
 
     return {
