@@ -165,5 +165,88 @@ const Api = (() => {
         };
     }
 
-    return { getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient, trackPageView, getStats };
+    async function signUp(email, password, inviteCode, captchaToken) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const opts = {};
+        if (inviteCode) opts.data = { invite_code: inviteCode };
+        if (captchaToken) opts.captchaToken = captchaToken;
+        const { data, error } = await client.auth.signUp({ email, password, options: opts });
+        if (error) throw error;
+        return data;
+    }
+
+    async function verifyOtp(email, token) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.auth.verifyOtp({ email, token, type: 'signup' });
+        if (error) throw error;
+        return data;
+    }
+
+    async function claimInviteCode(code) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('claim_invite_code', { p_code: code || null });
+        if (error) throw error;
+        return data;
+    }
+
+    async function generateInviteCode() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('generate_user_invite_code');
+        if (error) throw error;
+        return data;
+    }
+
+    async function getUserInviteStatus() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('get_user_invite_status');
+        if (error) throw error;
+        return data && data[0] ? data[0] : null;
+    }
+
+    async function adminGetInviteCodes() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_get_invite_codes');
+        if (error) throw error;
+        return data || [];
+    }
+
+    async function adminGenerateInviteCode() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_generate_invite_code');
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminDeleteInviteCode(id) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_delete_invite_code', { p_id: id });
+        if (error) throw error;
+        return data;
+    }
+
+    async function verifyTurnstile(token) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('verify_turnstile', { p_token: token });
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminGetProfiles() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_get_profiles');
+        if (error) throw error;
+        return data || [];
+    }
+
+    return { getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient, trackPageView, getStats, signUp, verifyOtp, claimInviteCode, generateInviteCode, getUserInviteStatus, adminGetInviteCodes, adminGenerateInviteCode, adminDeleteInviteCode, adminGetProfiles, verifyTurnstile };
 })();

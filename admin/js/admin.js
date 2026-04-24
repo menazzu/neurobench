@@ -3,6 +3,9 @@ const AdminApp = (() => {
     let currentDifficulty = 'easy';
     let modelsData = [];
     let allPromptsData = [];
+    let invitesData = [];
+    let profilesData = [];
+    let currentInviteFilter = 'all';
 
     function showModal(html) {
         document.getElementById('modal-content').innerHTML = html;
@@ -51,6 +54,8 @@ const AdminApp = (() => {
         loadPrompts();
         loadModels();
         loadStats();
+        loadInvites();
+        loadProfiles();
     }
 
     function escapeHtml(str) {
@@ -523,6 +528,83 @@ const AdminApp = (() => {
         });
     }
 
+    async function loadInvites() {
+        try {
+            invitesData = await Api.adminGetInviteCodes();
+        } catch {
+            invitesData = [];
+        }
+        renderInvitesList();
+    }
+
+    async function loadProfiles() {
+        try {
+            profilesData = await Api.adminGetProfiles();
+        } catch {
+            profilesData = [];
+        }
+        renderProfilesList();
+    }
+
+    function renderInvitesList() {
+        const container = document.getElementById('invites-list');
+        if (!container) return;
+        let filtered = invitesData;
+        if (currentInviteFilter === 'unused') filtered = invitesData.filter(i => !i.used_by);
+        else if (currentInviteFilter === 'used') filtered = invitesData.filter(i => i.used_by);
+        else if (currentInviteFilter === 'admin') filtered = invitesData.filter(i => i.is_admin_code);
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет инвайт-кодов</p>';
+            return;
+        }
+        container.innerHTML = filtered.map(i => `
+            <div class="admin-prompt-card flex justify-between items-start gap-4">
+                <div class="flex-1">
+                    <span class="text-gray-200 font-bold font-mono tracking-widest">${escapeHtml(i.code)}</span>
+                    <span class="ml-3 text-xs ${i.used_by ? 'text-red-400/60' : 'text-green-400/60'}">${i.used_by ? 'Использован' : 'Свободен'}</span>
+                    ${i.is_admin_code ? '<span class="ml-2 text-xs text-yellow-400/60">Админский</span>' : ''}
+                    <span class="text-xs text-gray-500 block mt-1">Создан: ${new Date(i.created_at).toLocaleString('ru')}${i.used_at ? ' | Использован: ' + new Date(i.used_at).toLocaleString('ru') : ''}</span>
+                </div>
+                <div class="flex-shrink-0 flex gap-2">
+                    ${!i.used_by ? `<button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteInvite('${i.id}')">Удал.</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderProfilesList() {
+        const container = document.getElementById('users-list');
+        if (!container) return;
+        if (profilesData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет пользователей</p>';
+            return;
+        }
+        container.innerHTML = profilesData.map(p => `
+            <div class="admin-prompt-card flex justify-between items-start gap-4">
+                <div class="flex-1">
+                    <span class="text-gray-200 font-bold">${escapeHtml(p.email)}</span>
+                    <span class="ml-3 text-xs ${p.is_verified ? 'text-green-400/60' : 'text-yellow-400/60'}">${p.is_verified ? 'Верифицирован' : 'Не верифицирован'}</span>
+                    <span class="text-xs text-gray-500 block mt-1">
+                        ID: ${p.user_id.slice(0, 8)}...
+                        | Инвайт сгенерирован: ${p.has_generated_invite ? 'Да' : 'Нет'}
+                        | Создан: ${new Date(p.created_at).toLocaleString('ru')}
+                    </span>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function deleteInvite(id) {
+        if (!confirm('Удалить неиспользованный инвайт-код?')) return;
+        try {
+            await Api.adminDeleteInviteCode(id);
+            await loadInvites();
+        } catch (err) {
+            alert('Ошибка удаления: ' + err.message);
+        }
+    }
+
     async function loadStats() {
         let stats;
         try { stats = await Api.getStats(); } catch { stats = null; }
@@ -626,6 +708,24 @@ const AdminApp = (() => {
 
         document.getElementById('add-model-btn').addEventListener('click', showAddModelForm);
         document.getElementById('add-prompt-btn').addEventListener('click', showAddPromptForm);
+        document.getElementById('add-invite-btn').addEventListener('click', async () => {
+            try {
+                const code = await Api.adminGenerateInviteCode();
+                if (!code) throw new Error('Нет прав');
+                await loadInvites();
+            } catch (err) {
+                alert('Ошибка генерации: ' + err.message);
+            }
+        });
+
+        document.querySelectorAll('.invite-filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.invite-filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentInviteFilter = btn.dataset.invFilter;
+                renderInvitesList();
+            });
+        });
 
         document.getElementById('modal-overlay').addEventListener('click', (e) => {
             if (e.target.id === 'modal-overlay') hideModal();
@@ -638,7 +738,7 @@ const AdminApp = (() => {
         checkAuth();
     }
 
-    return { init, editModel, deleteModel, editPrompt, deletePrompt, closeModal: hideModal };
+    return { init, editModel, deleteModel, editPrompt, deletePrompt, closeModal: hideModal, deleteInvite };
 })();
 
 document.addEventListener('DOMContentLoaded', AdminApp.init);

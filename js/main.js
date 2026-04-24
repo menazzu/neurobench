@@ -13,9 +13,35 @@ async function trackVisit() {
     } catch {}
 }
 
+async function initUserMenu() {
+    try {
+        Api.reinit();
+        const session = await Api.getSession();
+        const authLink = document.getElementById('nav-auth-link');
+        const userMenu = document.getElementById('nav-user-menu');
+        if (!session) return;
+        if (authLink) authLink.classList.add('hidden');
+        if (userMenu) {
+            userMenu.classList.remove('hidden');
+            const emailEl = document.getElementById('nav-user-email');
+            if (emailEl) emailEl.textContent = session.user.email;
+            try {
+                const status = await Api.getUserInviteStatus();
+                if (status && status.is_verified && status.has_generated_invite && status.generated_code) {
+                    const inviteSec = document.getElementById('nav-user-invite');
+                    const codeEl = document.getElementById('nav-user-invite-code');
+                    if (inviteSec) inviteSec.classList.remove('hidden');
+                    if (codeEl) codeEl.textContent = status.generated_code;
+                }
+            } catch {}
+        }
+    } catch {}
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     await LeaderboardModule.load();
     trackVisit();
+    initUserMenu();
 
     const mobileBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
@@ -80,5 +106,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             document.querySelectorAll('.date-chevron.rotate-180').forEach(c => c.classList.remove('rotate-180'));
         }
+        if (!e.target.closest('#nav-user-menu')) {
+            const dd = document.getElementById('nav-user-dropdown');
+            if (dd) dd.classList.add('hidden');
+        }
     });
+
+    const userBtn = document.getElementById('nav-user-btn');
+    if (userBtn) {
+        userBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dd = document.getElementById('nav-user-dropdown');
+            if (dd) dd.classList.toggle('hidden');
+        });
+    }
+
+    const logoutBtn = document.getElementById('nav-user-logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            await Api.logout();
+            const authLink = document.getElementById('nav-auth-link');
+            const userMenu = document.getElementById('nav-user-menu');
+            if (authLink) authLink.classList.remove('hidden');
+            if (userMenu) userMenu.classList.add('hidden');
+        });
+    }
 });
