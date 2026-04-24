@@ -137,17 +137,17 @@ Deno.serve(async (req: Request) => {
 
     await adminClient
       .from('profiles')
-      .update({
+      .upsert({
+        user_id: newUser.id,
+        email,
+        is_verified: true,
         telegram_id: telegramId,
         telegram_username: auth_data.username || null,
         telegram_first_name: auth_data.first_name || null,
         telegram_last_name: auth_data.last_name || null,
         telegram_photo_url: auth_data.photo_url || null,
-        is_verified: true,
         used_invite_code_id: validCode.id,
-        pending_invite_code: null
-      })
-      .eq('user_id', newUser.id)
+      }, { onConflict: 'user_id' })
 
     await adminClient
       .from('invite_codes')

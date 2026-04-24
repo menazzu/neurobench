@@ -550,8 +550,8 @@ const AdminApp = (() => {
         const container = document.getElementById('invites-list');
         if (!container) return;
         let filtered = invitesData;
-        if (currentInviteFilter === 'unused') filtered = invitesData.filter(i => !i.used_by);
-        else if (currentInviteFilter === 'used') filtered = invitesData.filter(i => i.used_by);
+        if (currentInviteFilter === 'unused') filtered = invitesData.filter(i => (i.max_uses === null || i.use_count < i.max_uses));
+        else if (currentInviteFilter === 'used') filtered = invitesData.filter(i => i.max_uses !== null && i.use_count >= i.max_uses);
         else if (currentInviteFilter === 'admin') filtered = invitesData.filter(i => i.is_admin_code);
 
         if (filtered.length === 0) {
@@ -564,13 +564,15 @@ const AdminApp = (() => {
                 ? (i.use_count > 0 ? 'Используется' : 'Свободен')
                 : (i.use_count >= i.max_uses ? 'Исчерпан' : `${i.use_count}/${i.max_uses}`);
             const statusColor = (i.max_uses !== null && i.use_count >= i.max_uses) ? 'text-red-400/60' : (i.use_count > 0 ? 'text-yellow-400/60' : 'text-green-400/60');
+            const createdBy = !i.is_admin_code && i.created_by ? profilesData.find(p => p.user_id === i.created_by) : null;
+            const createdByLabel = i.is_admin_code ? 'Админ' : (createdBy ? (createdBy.telegram_username ? '@' + createdBy.telegram_username : createdBy.email) : '—');
             return `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
                     <span class="text-gray-200 font-bold font-mono tracking-widest">${escapeHtml(i.code)}</span>
                     <span class="ml-3 text-xs ${statusColor}">${statusText}</span>
                     ${i.is_admin_code ? '<span class="ml-2 text-xs text-yellow-400/60">Админский</span>' : ''}
-                    <span class="text-xs text-gray-500 block mt-1">Лимит: ${maxLabel} | Создан: ${new Date(i.created_at).toLocaleString('ru')}${i.used_at ? ' | Посл. использование: ' + new Date(i.used_at).toLocaleString('ru') : ''}</span>
+                    <span class="text-xs text-gray-500 block mt-1">Лимит: ${maxLabel} | Создал: ${escapeHtml(createdByLabel)} | Создан: ${new Date(i.created_at).toLocaleString('ru')}${i.used_at ? ' | Посл. исп.: ' + new Date(i.used_at).toLocaleString('ru') : ''}</span>
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
                     ${(i.max_uses === null || i.use_count < i.max_uses) ? `<button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteInvite('${i.id}')">Удал.</button>` : ''}

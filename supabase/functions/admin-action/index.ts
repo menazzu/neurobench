@@ -68,10 +68,9 @@ Deno.serve(async (req: Request) => {
         .update({ used_invite_code_id: null, generated_invite_code_id: null })
         .eq('user_id', user_id)
 
-      await adminClient
-        .from('invite_code_uses')
-        .delete()
-        .eq('user_id', user_id)
+      try {
+        await adminClient.from('invite_code_uses').delete().eq('user_id', user_id)
+      } catch {}
 
       await adminClient
         .from('invite_codes')
