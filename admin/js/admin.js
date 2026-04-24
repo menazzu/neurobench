@@ -599,6 +599,7 @@ const AdminApp = (() => {
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
                     ${p.has_generated_invite ? `<button class="text-blue-400/60 hover:text-blue-400 transition-colors text-xs" onclick="AdminApp.resetInviteLimit('${p.user_id}')">Сбросить лимит</button>` : ''}
+                    <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteUser('${p.user_id}')">Удал.</button>
                 </div>
             </div>
         `}).join('');
@@ -635,6 +636,18 @@ const AdminApp = (() => {
             await loadProfiles();
         } catch (err) {
             alert('Ошибка: ' + err.message);
+        }
+    }
+
+    async function deleteUser(userId) {
+        const profile = profilesData.find(p => p.user_id === userId);
+        const label = profile ? (profile.telegram_username ? '@' + profile.telegram_username : profile.email) : userId.slice(0, 8);
+        if (!confirm(`Удалить пользователя ${label}? Это действие необратимо.`)) return;
+        try {
+            await Api.adminDeleteUser(userId);
+            await loadProfiles();
+        } catch (err) {
+            alert('Ошибка удаления: ' + err.message);
         }
     }
 
@@ -775,7 +788,7 @@ const AdminApp = (() => {
         checkAuth();
     }
 
-    return { init, editModel, deleteModel, editPrompt, deletePrompt, closeModal: hideModal, deleteInvite, resetInviteLimit, resetAllLimits };
+    return { init, editModel, deleteModel, editPrompt, deletePrompt, closeModal: hideModal, deleteInvite, resetInviteLimit, resetAllLimits, deleteUser };
 })();
 
 document.addEventListener('DOMContentLoaded', AdminApp.init);

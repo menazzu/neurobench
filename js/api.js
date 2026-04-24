@@ -136,6 +136,7 @@ const Api = (() => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${anonKey}`,
+                'apikey': anonKey,
             },
             body: JSON.stringify(body)
         });
@@ -281,6 +282,28 @@ const Api = (() => {
         return data;
     }
 
+    async function adminDeleteUser(userId) {
+        const supabaseUrl = window.SUPABASE_URL;
+        const anonKey = window.SUPABASE_ANON_KEY;
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data: sessionData } = await client.auth.getSession();
+        if (!sessionData) throw new Error('Not authenticated');
+        const accessToken = sessionData.access_token;
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-action`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+                'apikey': anonKey,
+            },
+            body: JSON.stringify({ action: 'delete_user', user_id: userId })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Delete failed');
+        return result;
+    }
+
     return {
         getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels,
         addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt,
@@ -289,6 +312,6 @@ const Api = (() => {
         trackPageView, getStats,
         claimInviteCode, generateInviteCode, getUserInviteStatus, getUserDisplayName,
         adminGetInviteCodes, adminGenerateInviteCode, adminDeleteInviteCode, adminGetProfiles,
-        adminResetUserInviteLimit, adminResetAllInviteLimits
+        adminResetUserInviteLimit, adminResetAllInviteLimits, adminDeleteUser
     };
 })();
