@@ -116,7 +116,7 @@ const AuthApp = (() => {
                     return;
                 }
             } catch {
-                showError('invite-code-error', 'Ошибка проверки капчи');
+                showError('invite-code-error', 'Ошибка проверки капчи, попробуйте снова');
                 btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
                 btn.textContent = 'Далее';
                 return;
