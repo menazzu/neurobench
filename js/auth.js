@@ -104,8 +104,7 @@ const AuthApp = (() => {
             btn.disabled = true;
             btn.textContent = 'Проверка...';
             try {
-                const result = await Api.verifyTurnstile(captchaToken);
-                const ok = result === true || (typeof result === 'string' && result.includes('"success":true'));
+                const ok = await Api.verifyTurnstile(captchaToken);
                 if (!ok) {
                     showError('invite-code-error', 'Капча не пройдена, попробуйте снова');
                     btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
