@@ -104,7 +104,8 @@ const AuthApp = (() => {
             btn.disabled = true;
             btn.textContent = 'Проверка...';
             try {
-                const ok = await Api.verifyTurnstile(captchaToken);
+                const result = await Api.verifyTurnstile(captchaToken);
+                const ok = result === true || (typeof result === 'string' && result.includes('"success":true'));
                 if (!ok) {
                     showError('invite-code-error', 'Капча не пройдена, попробуйте снова');
                     btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
@@ -117,7 +118,7 @@ const AuthApp = (() => {
                 }
             } catch (err) {
                 console.error('Turnstile verify error:', err);
-                showError('invite-code-error', 'Ошибка капчи: ' + (err.message || JSON.stringify(err)));
+                showError('invite-code-error', 'Ошибка проверки капчи');
                 btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
                 btn.textContent = 'Далее';
                 return;
