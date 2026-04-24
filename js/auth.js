@@ -115,8 +115,9 @@ const AuthApp = (() => {
                     }
                     return;
                 }
-            } catch {
-                showError('invite-code-error', 'Ошибка проверки капчи, попробуйте снова');
+            } catch (err) {
+                console.error('Turnstile verify error:', err);
+                showError('invite-code-error', 'Ошибка капчи: ' + (err.message || JSON.stringify(err)));
                 btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
                 btn.textContent = 'Далее';
                 return;
