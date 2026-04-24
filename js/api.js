@@ -123,6 +123,42 @@ const Api = (() => {
         return !!data;
     }
 
+    async function telegramAuth(authData, inviteCode) {
+        const supabaseUrl = window.SUPABASE_URL;
+        const anonKey = window.SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !anonKey) throw new Error('Supabase not configured');
+
+        const body = { auth_data: authData };
+        if (inviteCode) body.invite_code = inviteCode;
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+            },
+            body: JSON.stringify(body)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            const err = new Error(result.error || 'Authentication failed');
+            err.needsInvite = result.needs_invite || false;
+            throw err;
+        }
+
+        return result;
+    }
+
+    async function setSession(accessToken, refreshToken) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (error) throw error;
+        return data;
+    }
+
     async function trackPageView(visitorHash, page, referrer) {
         const client = getClient();
         if (!client) return;
@@ -165,25 +201,6 @@ const Api = (() => {
         };
     }
 
-    async function signUp(email, password, inviteCode, captchaToken) {
-        const client = getClient();
-        if (!client) throw new Error('Supabase not configured');
-        const opts = {};
-        if (inviteCode) opts.data = { invite_code: inviteCode };
-        if (captchaToken) opts.captchaToken = captchaToken;
-        const { data, error } = await client.auth.signUp({ email, password, options: opts });
-        if (error) throw error;
-        return data;
-    }
-
-    async function verifyOtp(email, token) {
-        const client = getClient();
-        if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.auth.verifyOtp({ email, token, type: 'signup' });
-        if (error) throw error;
-        return data;
-    }
-
     async function claimInviteCode(code) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
@@ -204,6 +221,14 @@ const Api = (() => {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
         const { data, error } = await client.rpc('get_user_invite_status');
+        if (error) throw error;
+        return data && data[0] ? data[0] : null;
+    }
+
+    async function getUserDisplayName() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('get_user_display_name');
         if (error) throw error;
         return data && data[0] ? data[0] : null;
     }
@@ -232,14 +257,6 @@ const Api = (() => {
         return data;
     }
 
-    async function verifyTurnstile(token) {
-        const client = getClient();
-        if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.rpc('verify_turnstile', { p_token: token });
-        if (error) throw error;
-        return data;
-    }
-
     async function adminGetProfiles() {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
@@ -248,5 +265,30 @@ const Api = (() => {
         return data || [];
     }
 
-    return { getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels, addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt, login, logout, getSession, isAdmin, reinit, getClient, trackPageView, getStats, signUp, verifyOtp, claimInviteCode, generateInviteCode, getUserInviteStatus, adminGetInviteCodes, adminGenerateInviteCode, adminDeleteInviteCode, adminGetProfiles, verifyTurnstile };
+    async function adminResetUserInviteLimit(userId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_reset_user_invite_limit', { p_user_id: userId });
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminResetAllInviteLimits() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_reset_all_invite_limits');
+        if (error) throw error;
+        return data;
+    }
+
+    return {
+        getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels,
+        addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt,
+        login, logout, getSession, isAdmin, reinit, getClient,
+        telegramAuth, setSession,
+        trackPageView, getStats,
+        claimInviteCode, generateInviteCode, getUserInviteStatus, getUserDisplayName,
+        adminGetInviteCodes, adminGenerateInviteCode, adminDeleteInviteCode, adminGetProfiles,
+        adminResetUserInviteLimit, adminResetAllInviteLimits
+    };
 })();

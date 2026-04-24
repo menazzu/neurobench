@@ -23,15 +23,26 @@ async function initUserMenu() {
         if (authLink) authLink.classList.add('hidden');
         if (userMenu) {
             userMenu.classList.remove('hidden');
-            const emailEl = document.getElementById('nav-user-email');
-            if (emailEl) emailEl.textContent = session.user.email;
             try {
-                const status = await Api.getUserInviteStatus();
-                if (status && status.is_verified && status.has_generated_invite && status.generated_code) {
-                    const inviteSec = document.getElementById('nav-user-invite');
-                    const codeEl = document.getElementById('nav-user-invite-code');
-                    if (inviteSec) inviteSec.classList.remove('hidden');
-                    if (codeEl) codeEl.textContent = status.generated_code;
+                const info = await Api.getUserDisplayName();
+                if (info) {
+                    const displayEl = document.getElementById('nav-user-display');
+                    if (displayEl) {
+                        const parts = [info.telegram_first_name, info.telegram_last_name].filter(Boolean);
+                        displayEl.textContent = parts.length > 0 ? parts.join(' ') : (info.telegram_username || info.display_name);
+                    }
+                    if (info.telegram_photo_url) {
+                        const photoEl = document.getElementById('nav-user-photo');
+                        const iconEl = document.getElementById('nav-user-icon');
+                        if (photoEl) { photoEl.src = info.telegram_photo_url; photoEl.classList.remove('hidden'); }
+                        if (iconEl) iconEl.classList.add('hidden');
+                    }
+                    if (info.is_verified && info.has_generated_invite && info.generated_code) {
+                        const inviteSec = document.getElementById('nav-user-invite');
+                        const codeEl = document.getElementById('nav-user-invite-code');
+                        if (inviteSec) inviteSec.classList.remove('hidden');
+                        if (codeEl) codeEl.textContent = info.generated_code;
+                    }
                 }
             } catch {}
         }

@@ -580,19 +580,28 @@ const AdminApp = (() => {
             container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет пользователей</p>';
             return;
         }
-        container.innerHTML = profilesData.map(p => `
+        container.innerHTML = profilesData.map(p => {
+            const tgName = [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ');
+            const tgLine = p.telegram_username
+                ? `<span class="text-blue-400/70 ml-2">@${escapeHtml(p.telegram_username)}</span>`
+                : (tgName ? `<span class="text-blue-400/70 ml-2">${escapeHtml(tgName)}</span>` : '');
+            return `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
-                    <span class="text-gray-200 font-bold">${escapeHtml(p.email)}</span>
+                    <span class="text-gray-200 font-bold">${escapeHtml(p.email)}</span>${tgLine}
                     <span class="ml-3 text-xs ${p.is_verified ? 'text-green-400/60' : 'text-yellow-400/60'}">${p.is_verified ? 'Верифицирован' : 'Не верифицирован'}</span>
                     <span class="text-xs text-gray-500 block mt-1">
                         ID: ${p.user_id.slice(0, 8)}...
+                        ${p.telegram_id ? '| TG ID: ' + p.telegram_id : ''}
                         | Инвайт сгенерирован: ${p.has_generated_invite ? 'Да' : 'Нет'}
                         | Создан: ${new Date(p.created_at).toLocaleString('ru')}
                     </span>
                 </div>
+                <div class="flex-shrink-0 flex gap-2">
+                    ${p.has_generated_invite ? `<button class="text-blue-400/60 hover:text-blue-400 transition-colors text-xs" onclick="AdminApp.resetInviteLimit('${p.user_id}')">Сбросить лимит</button>` : ''}
+                </div>
             </div>
-        `).join('');
+        `}).join('');
     }
 
     async function deleteInvite(id) {
@@ -602,6 +611,30 @@ const AdminApp = (() => {
             await loadInvites();
         } catch (err) {
             alert('Ошибка удаления: ' + err.message);
+        }
+    }
+
+    async function resetInviteLimit(userId) {
+        if (!confirm('Сбросить лимит инвайтов для этого пользователя?')) return;
+        try {
+            const result = await Api.adminResetUserInviteLimit(userId);
+            if (!result) { alert('Не удалось сбросить лимит'); return; }
+            await loadProfiles();
+        } catch (err) {
+            alert('Ошибка: ' + err.message);
+        }
+    }
+
+    async function resetAllLimits() {
+        const count = profilesData.filter(p => p.has_generated_invite).length;
+        if (count === 0) { alert('Нет пользователей со сброшенным лимитом'); return; }
+        if (!confirm(`Сбросить лимит инвайтов для ${count} пользователей?`)) return;
+        try {
+            const result = await Api.adminResetAllInviteLimits();
+            if (result < 0) { alert('Нет прав'); return; }
+            await loadProfiles();
+        } catch (err) {
+            alert('Ошибка: ' + err.message);
         }
     }
 
@@ -735,10 +768,14 @@ const AdminApp = (() => {
             renderModelsList();
         });
 
+        document.getElementById('reset-all-limits-btn').addEventListener('click', async () => {
+            await AdminApp.resetAllLimits();
+        });
+
         checkAuth();
     }
 
-    return { init, editModel, deleteModel, editPrompt, deletePrompt, closeModal: hideModal, deleteInvite };
+    return { init, editModel, deleteModel, editPrompt, deletePrompt, closeModal: hideModal, deleteInvite, resetInviteLimit, resetAllLimits };
 })();
 
 document.addEventListener('DOMContentLoaded', AdminApp.init);
