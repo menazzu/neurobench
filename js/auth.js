@@ -104,8 +104,19 @@ const AuthApp = (() => {
             btn.disabled = true;
             btn.textContent = 'Проверка...';
             try {
-                const ok = await Api.verifyTurnstile(captchaToken);
-                console.log('Turnstile RPC result:', ok, typeof ok);
+                const result = await Api.verifyTurnstile(captchaToken);
+                console.log('Turnstile RPC result:', result, typeof result);
+                let ok = false;
+                if (typeof result === 'boolean') {
+                    ok = result;
+                } else if (typeof result === 'string') {
+                    try {
+                        const parsed = JSON.parse(result);
+                        ok = parsed.success === true;
+                    } catch {
+                        ok = false;
+                    }
+                }
                 if (!ok) {
                     showError('invite-code-error', 'Капча не пройдена, попробуйте снова');
                     btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
