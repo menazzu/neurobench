@@ -133,7 +133,7 @@ const Api = (() => {
 
         let result;
         try {
-            const response = await fetch(`${supabaseUrl}/functions/v1/rapid-function`, {
+            const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -296,7 +296,7 @@ const Api = (() => {
 
         let result;
         try {
-            const response = await fetch(`${supabaseUrl}/functions/v1/quick-endpoint`, {
+            const response = await fetch(`${supabaseUrl}/functions/v1/admin-action`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
