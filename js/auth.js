@@ -43,6 +43,12 @@ const AuthApp = (() => {
             return;
         }
         if (!window.turnstile) {
+            if (typeof initTurnstile._attempts === 'undefined') initTurnstile._attempts = 0;
+            initTurnstile._attempts++;
+            if (initTurnstile._attempts > 10) {
+                document.getElementById('reg-step1-btn').disabled = false;
+                return;
+            }
             setTimeout(initTurnstile, 500);
             return;
         }
@@ -56,11 +62,11 @@ const AuthApp = (() => {
             },
             'error-callback': () => {
                 captchaToken = null;
-                document.getElementById('reg-step1-btn').disabled = true;
+                document.getElementById('reg-step1-btn').disabled = false;
             },
             'expired-callback': () => {
                 captchaToken = null;
-                document.getElementById('reg-step1-btn').disabled = true;
+                document.getElementById('reg-step1-btn').disabled = false;
             }
         });
     }
