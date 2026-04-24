@@ -93,33 +93,30 @@ const AuthApp = (() => {
 
     async function handleStep1() {
         const code = document.getElementById('reg-invite-code').value.trim().toUpperCase();
-        if (!captchaToken && window.TURNSTILE_SITE_KEY) {
+        if (window.TURNSTILE_SITE_KEY && !captchaToken) {
             showError('invite-code-error', 'Пройдите капчу');
             return;
         }
+        const valid = await validateInviteCode(code);
+        if (!valid) return;
+        inviteCode = code;
+        showStep(2);
+    }
         const valid = await validateInviteCode(code);
         if (!valid) return;
         if (captchaToken && window.TURNSTILE_SITE_KEY) {
             const btn = document.getElementById('reg-step1-btn');
             btn.disabled = true;
             btn.textContent = 'Проверка...';
-            try {
-                const result = await Api.verifyTurnstile(captchaToken);
-                console.log('Turnstile RPC result:', result, typeof result);
-                let ok = false;
-                if (typeof result === 'boolean') {
-                    ok = result;
-                } else if (typeof result === 'string') {
-                    try {
-                        const parsed = JSON.parse(result);
-                        ok = parsed.success === true;
-                    } catch {
-                        ok = false;
-                    }
-                }
-                if (!ok) {
-                    showError('invite-code-error', 'Капча не пройдена, попробуйте снова');
-                    btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
+            btn.disabled = false;
+            btn.textContent = 'Далее';
+        }
+                inviteCode = code;
+                showStep(2);
+            } catch (err) {
+                console.error('Turnstile verify error:', err);
+                showError('invite-code-error', 'Ошибка проверки капчи');
+                btn.disabled = !captchaToken && !window.TURNSTILE_SITE_KEY;
                     btn.textContent = 'Далее';
                     if (window.turnstile && turnstileWidgetId !== null) {
                         turnstile.reset(turnstileWidgetId);
