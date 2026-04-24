@@ -39,34 +39,32 @@ const AuthApp = (() => {
     function initTurnstile() {
         if (!window.TURNSTILE_SITE_KEY) {
             captchaToken = null;
-            document.getElementById('reg-step1-btn').disabled = false;
             return;
         }
         if (!window.turnstile) {
             if (typeof initTurnstile._attempts === 'undefined') initTurnstile._attempts = 0;
             initTurnstile._attempts++;
-            if (initTurnstile._attempts > 10) {
-                document.getElementById('reg-step1-btn').disabled = false;
-                return;
-            }
+            if (initTurnstile._attempts > 10) return;
             setTimeout(initTurnstile, 500);
             return;
         }
         const container = document.getElementById('captcha-container');
         if (!container || turnstileWidgetId !== null) return;
+        const btn = document.getElementById('reg-step1-btn');
+        if (btn) btn.disabled = true;
         turnstileWidgetId = turnstile.render(container, {
             sitekey: window.TURNSTILE_SITE_KEY,
             callback: (token) => {
                 captchaToken = token;
-                document.getElementById('reg-step1-btn').disabled = false;
+                if (btn) btn.disabled = false;
             },
             'error-callback': () => {
                 captchaToken = null;
-                document.getElementById('reg-step1-btn').disabled = false;
+                if (btn) btn.disabled = false;
             },
             'expired-callback': () => {
                 captchaToken = null;
-                document.getElementById('reg-step1-btn').disabled = false;
+                if (btn) btn.disabled = false;
             }
         });
     }
