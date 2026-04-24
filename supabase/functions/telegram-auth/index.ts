@@ -68,17 +68,65 @@ Deno.serve(async (req: Request) => {
     const email = `telegram_${telegramId}@neurobench.local`
     const password = await generatePassword(telegramId)
 
-    const { data: existingProfile } = await adminClient
+    const tgProfile = {
+      telegram_username: auth_data.username || null,
+      telegram_first_name: auth_data.first_name || null,
+      telegram_last_name: auth_data.last_name || null,
+      telegram_photo_url: auth_data.photo_url || null,
+    }
+
+    let existingUserId: string | null = null
+
+    const { data: byTgId } = await adminClient
       .from('profiles')
       .select('user_id')
       .eq('telegram_id', telegramId)
       .maybeSingle()
 
-    if (existingProfile) {
+    if (byTgId) {
+      existingUserId = byTgId.user_id
+    }
+
+    if (!existingUserId) {
+      const { data: byEmail } = await adminClient
+        .from('profiles')
+        .select('user_id, telegram_id')
+        .eq('email', email)
+        .maybeSingle()
+
+      if (byEmail) {
+        existingUserId = byEmail.user_id
+        if (!byEmail.telegram_id) {
+          await adminClient
+            .from('profiles')
+            .update({ telegram_id: telegramId, ...tgProfile })
+            .eq('user_id', existingUserId)
+        }
+      }
+    }
+
+    if (!existingUserId) {
+      const { data: userList } = await adminClient.auth.admin.listUsers()
+      const found = (userList?.users || []).find(u => u.email === email)
+      if (found) {
+        existingUserId = found.id
+        await adminClient
+          .from('profiles')
+          .upsert({
+            user_id: found.id,
+            email,
+            is_verified: true,
+            telegram_id: telegramId,
+            ...tgProfile,
+          }, { onConflict: 'user_id' })
+      }
+    }
+
+    if (existingUserId) {
       const { data: sessionData, error: sessionError } = await anonClient.auth.signInWithPassword({ email, password })
 
       if (sessionError) {
-        await adminClient.auth.admin.updateUserById(existingProfile.user_id, { password })
+        await adminClient.auth.admin.updateUserById(existingUserId, { password })
         const retry = await anonClient.auth.signInWithPassword({ email, password })
         if (retry.error) {
           return jsonResponse({ error: 'Failed to create session' }, 500)
@@ -92,13 +140,8 @@ Deno.serve(async (req: Request) => {
 
       await adminClient
         .from('profiles')
-        .update({
-          telegram_username: auth_data.username || null,
-          telegram_first_name: auth_data.first_name || null,
-          telegram_last_name: auth_data.last_name || null,
-          telegram_photo_url: auth_data.photo_url || null
-        })
-        .eq('user_id', existingProfile.user_id)
+        .update({ telegram_id: telegramId, ...tgProfile })
+        .eq('user_id', existingUserId)
 
       return jsonResponse({
         access_token: sessionData.session.access_token,
@@ -117,7 +160,8 @@ Deno.serve(async (req: Request) => {
       .eq('code', invite_code.toUpperCase())
       .maybeSingle()
 
-    if (!validCode || (validCode.max_uses !== null && validCode.use_count >= validCode.max_uses)) {
+    const codeExhausted = validCode && validCode.max_uses !== null && validCode.use_count >= validCode.max_uses
+    if (!validCode || codeExhausted) {
       return jsonResponse({ error: 'Инвайт-код недействителен или уже использован' }, 400)
     }
 
@@ -142,21 +186,21 @@ Deno.serve(async (req: Request) => {
         email,
         is_verified: true,
         telegram_id: telegramId,
-        telegram_username: auth_data.username || null,
-        telegram_first_name: auth_data.first_name || null,
-        telegram_last_name: auth_data.last_name || null,
-        telegram_photo_url: auth_data.photo_url || null,
+        ...tgProfile,
         used_invite_code_id: validCode.id,
       }, { onConflict: 'user_id' })
 
+    const newUseCount = (validCode.use_count || 0) + 1
     await adminClient
       .from('invite_codes')
-      .update({ use_count: validCode.use_count + 1, used_by: newUser.id, used_at: new Date().toISOString() })
+      .update({ use_count: newUseCount, used_by: newUser.id, used_at: new Date().toISOString() })
       .eq('id', validCode.id)
 
-    await adminClient
-      .from('invite_code_uses')
-      .insert({ invite_code_id: validCode.id, user_id: newUser.id })
+    try {
+      await adminClient
+        .from('invite_code_uses')
+        .insert({ invite_code_id: validCode.id, user_id: newUser.id })
+    } catch {}
 
     const { data: sessionData, error: sessionError } = await anonClient.auth.signInWithPassword({ email, password })
 

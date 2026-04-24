@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS invite_code_uses (
     used_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE invite_code_uses ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "admin_read_code_uses" ON invite_code_uses;
 CREATE POLICY "admin_read_code_uses" ON invite_code_uses
     FOR SELECT USING (
         EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid())
@@ -164,3 +165,10 @@ BEGIN
     RETURN QUERY SELECT * FROM invite_code_uses WHERE invite_code_id = p_code_id ORDER BY used_at DESC;
 END;
 $$;
+
+-- 12. Fix existing telegram profiles that are missing telegram_id
+UPDATE profiles p
+SET telegram_id = replace(p.email, 'telegram_', ''),
+    is_verified = true
+WHERE p.email LIKE 'telegram_%@neurobench.local'
+  AND p.telegram_id IS NULL;
