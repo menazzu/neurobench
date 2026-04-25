@@ -546,6 +546,38 @@ const AdminApp = (() => {
         renderProfilesList();
     }
 
+    function renderProfilesList() {
+        const container = document.getElementById('users-list');
+        if (!container) return;
+        if (profilesData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет пользователей</p>';
+            return;
+        }
+        container.innerHTML = profilesData.map(p => {
+            const name = p.telegram_first_name || p.telegram_last_name
+                ? [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ')
+                : (p.telegram_username || '');
+            const username = p.telegram_username ? '@' + p.telegram_username : '';
+            const verified = p.is_verified ? '<span class="ml-2 text-xs text-green-400/60">Верифицирован</span>' : '<span class="ml-2 text-xs text-red-400/60">Не верифицирован</span>';
+            const inviteStatus = p.has_generated_invite ? 'Инвайт создан' : 'Лимит доступен';
+            const inviteColor = p.has_generated_invite ? 'text-yellow-400/60' : 'text-green-400/60';
+            return `
+            <div class="admin-prompt-card flex justify-between items-start gap-4">
+                <div class="flex-1">
+                    <span class="text-gray-200 font-bold">${escapeHtml(name)}</span>
+                    ${username ? `<span class="text-gray-400 ml-2 text-xs">${escapeHtml(username)}</span>` : ''}
+                    ${verified}
+                    <span class="text-xs text-gray-500 block mt-1">Email: ${escapeHtml(p.email || '—')} | ID: ${p.user_id ? p.user_id.slice(0, 8) + '...' : '—'} | Зарег.: ${p.created_at ? new Date(p.created_at).toLocaleString('ru') : '—'}</span>
+                    <span class="text-xs ${inviteColor}">${inviteStatus}</span>
+                </div>
+                <div class="flex-shrink-0 flex gap-2">
+                    <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.resetInviteLimit('${p.user_id}')">Сбросить лимит</button>
+                    <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.deleteUser('${p.user_id}')">Удал.</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
     function renderInvitesList() {
         const container = document.getElementById('invites-list');
         if (!container) return;
