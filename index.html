@@ -265,7 +265,6 @@
 
     <script type="module">
         import { animate, inView, stagger } from "https://esm.sh/framer-motion";
-        import gsap from "https://esm.sh/gsap";
 
         const canvas = document.getElementById('ascii-canvas');
         const ctx = canvas.getContext('2d');
@@ -325,10 +324,16 @@
             title.appendChild(span);
         });
 
-        window.onload = () => {
+        function runHeroAnimations() {
             animate(".letter", { opacity: 1, y: [20, 0], filter: ["blur(10px)", "blur(0px)"] }, { delay: stagger(0.03), duration: 0.8 });
             animate("#hero-desc", { opacity: 0.3, y: [20, 0] }, { delay: 0.8, duration: 1 });
-        };
+        }
+
+        if (document.readyState === 'complete') {
+            runHeroAnimations();
+        } else {
+            window.addEventListener('load', runHeroAnimations);
+        }
 
         document.querySelectorAll('.matte-card').forEach(card => {
             inView(card, (info) => {

@@ -141,10 +141,6 @@
     <script>
         (function() {
             var botUsername = window.TELEGRAM_BOT_USERNAME || '';
-            var scripts = document.querySelectorAll('#tg-widget-container script[data-telegram-login]');
-            scripts.forEach(function(s) {
-                s.setAttribute('data-telegram-login', botUsername);
-            });
             if (botUsername) {
                 var newScript = document.createElement('script');
                 newScript.async = true;

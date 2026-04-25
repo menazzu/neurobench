@@ -211,7 +211,7 @@ canvas#ascii-canvas {
 }
 
 #mobile-menu.open {
-    display: flex;
+    display: flex !important;
 }
 
 #model-search {

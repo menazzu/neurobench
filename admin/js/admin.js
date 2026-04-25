@@ -61,7 +61,7 @@ const AdminApp = (() => {
     function escapeHtml(str) {
         const d = document.createElement('div');
         d.textContent = str;
-        return d.innerHTML;
+        return d.innerHTML.replace(/"/g, '&quot;');
     }
 
     async function loadPrompts() {
@@ -374,7 +374,7 @@ const AdminApp = (() => {
         showModal(`
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать модель</h3>
             <form id="model-edit-form" class="flex flex-col gap-4">
-                <input type="hidden" id="edit-variant-json" value='${escapeHtml(JSON.stringify(existingVariants))}'>
+                <input type="hidden" id="edit-variant-json" value="${escapeHtml(JSON.stringify(existingVariants))}">
                 <label class="flex flex-col gap-1">
                     <span class="text-xs uppercase tracking-widest text-gray-400">Промпт *</span>
                     <select name="prompt_id" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
@@ -565,7 +565,7 @@ const AdminApp = (() => {
                 : (i.use_count >= i.max_uses ? 'Исчерпан' : `${i.use_count}/${i.max_uses}`);
             const statusColor = (i.max_uses !== null && i.use_count >= i.max_uses) ? 'text-red-400/60' : (i.use_count > 0 ? 'text-yellow-400/60' : 'text-green-400/60');
             const createdBy = !i.is_admin_code && i.created_by ? profilesData.find(p => p.user_id === i.created_by) : null;
-            const createdByLabel = i.is_admin_code ? 'Админ' : (createdBy ? (createdBy.telegram_username ? '@' + createdBy.telegram_username : createdBy.email) : '—');
+            const createdByLabel = i.is_admin_code ? 'Админ' : (createdBy ? (createdBy.telegram_username ? '@' + createdBy.telegram_username : (createdBy.email || '—')) : '—');
             return `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
@@ -617,7 +617,7 @@ const AdminApp = (() => {
 
     async function deleteUser(userId) {
         const profile = profilesData.find(p => p.user_id === userId);
-        const label = profile ? (profile.telegram_username ? '@' + profile.telegram_username : profile.email) : userId.slice(0, 8);
+        const label = profile ? (profile.telegram_username ? '@' + profile.telegram_username : (profile.email || userId.slice(0, 8))) : userId.slice(0, 8);
         if (!confirm(`Удалить пользователя ${label}? Это действие необратимо.`)) return;
         try {
             await Api.adminDeleteUser(userId);

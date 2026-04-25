@@ -291,8 +291,8 @@ const Api = (() => {
         const anonKey = window.SUPABASE_ANON_KEY;
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data: sessionData } = await client.auth.getSession();
-        if (!sessionData) throw new Error('Not authenticated');
+        const { data: { session } } = await client.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
 
         let result;
         try {
@@ -301,7 +301,7 @@ const Api = (() => {
                 headers: {
                     'Content-Type': 'application/json',
                     'apikey': anonKey,
-                    'Authorization': `Bearer ${sessionData.access_token}`,
+                    'Authorization': `Bearer ${session.access_token}`,
                 },
                 body: JSON.stringify({ action: 'delete_user', user_id: userId })
             });

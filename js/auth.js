@@ -128,6 +128,8 @@ const AuthApp = (() => {
                 document.getElementById('account-invite-code').textContent = code;
                 document.getElementById('account-no-invite').classList.add('hidden');
                 document.getElementById('account-has-invite').classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Сгенерировать инвайт-код';
             } catch (err) {
                 alert(err.message || 'Ошибка генерации');
                 btn.disabled = false;

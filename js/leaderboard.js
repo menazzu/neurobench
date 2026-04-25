@@ -11,6 +11,7 @@ const LeaderboardModule = (() => {
     let modelsData = [];
     let activeMessageHandlers = [];
     let searchQuery = '';
+    let barObserver = null;
 
     async function load() {
         showLoading();
@@ -231,7 +232,7 @@ const LeaderboardModule = (() => {
     function escapeHtml(str) {
         const d = document.createElement('div');
         d.textContent = str;
-        return d.innerHTML;
+        return d.innerHTML.replace(/"/g, '&quot;');
     }
 
     function renderSvgBlock(model) {
@@ -272,7 +273,9 @@ const LeaderboardModule = (() => {
             .replace(/<\?xml[^?]*\?>/gi, '')
             .replace(/<!DOCTYPE[^>]*>/gi, '')
             .replace(/\s+xmlns\s*=\s*["']/g, ' xmlns="')
-            .replace(/<svg(?![^>]*xmlns)/, '<svg xmlns="http://www.w3.org/2000/svg"');
+            .replace(/<svg(?![^>]*xmlns)/, '<svg xmlns="http://www.w3.org/2000/svg"')
+            .replace(/<script[\s\S]*?<\/script\s*>/gi, '')
+            .replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
     }
 
     function renderBenchmarkList() {
@@ -528,7 +531,8 @@ const LeaderboardModule = (() => {
             listContainer.appendChild(card);
         });
 
-        const observer = new IntersectionObserver((entries) => {
+        if (barObserver) barObserver.disconnect();
+        barObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.querySelectorAll('.hatching-fill').forEach(bar => { bar.style.width = bar.getAttribute('data-target'); });
@@ -536,7 +540,7 @@ const LeaderboardModule = (() => {
                 }
             });
         }, { threshold: 0.15 });
-        document.querySelectorAll('.benchmark-card').forEach(card => observer.observe(card));
+        document.querySelectorAll('.benchmark-card').forEach(card => barObserver.observe(card));
     }
 
     return { load, setSearch(q) { searchQuery = q; renderBenchmarkList(); }, retry() { load(); } };
