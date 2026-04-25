@@ -192,6 +192,8 @@ WHERE has_generated_invite = true
   AND generated_invite_code_id IS NULL;
 
 -- 14. Update getUserDisplayName to include invite_use_count
+DROP FUNCTION IF EXISTS public.get_user_display_name();
+
 CREATE OR REPLACE FUNCTION public.get_user_display_name()
 RETURNS TABLE(
     telegram_first_name TEXT,
