@@ -18,6 +18,15 @@ const AuthApp = (() => {
         if (target) target.classList.remove('hidden');
     }
 
+    function resetInviteState() {
+        const noInvite = document.getElementById('account-no-invite');
+        const deletedInvite = document.getElementById('account-invite-deleted');
+        const hasInvite = document.getElementById('account-has-invite');
+        if (noInvite) noInvite.classList.add('hidden');
+        if (deletedInvite) deletedInvite.classList.add('hidden');
+        if (hasInvite) hasInvite.classList.add('hidden');
+    }
+
     async function handleTelegramAuth(user) {
         if (isProcessing) return;
         isProcessing = true;
@@ -74,7 +83,10 @@ const AuthApp = (() => {
                     usernameEl.classList.remove('hidden');
                 }
                 if (photoEl && info.telegram_photo_url) {
-                    photoEl.src = info.telegram_photo_url;
+                    const url = info.telegram_photo_url.startsWith('/')
+                        ? 'https://t.me' + info.telegram_photo_url
+                        : info.telegram_photo_url;
+                    photoEl.src = url;
                     photoEl.classList.remove('hidden');
                     const placeholder = document.getElementById('account-photo-placeholder');
                     if (placeholder) placeholder.classList.add('hidden');
@@ -82,10 +94,22 @@ const AuthApp = (() => {
 
                 if (info.is_verified) {
                     document.getElementById('account-verified').classList.remove('hidden');
+                    resetInviteState();
+
                     if (info.has_generated_invite && info.generated_code) {
-                        document.getElementById('account-no-invite').classList.add('hidden');
                         document.getElementById('account-has-invite').classList.remove('hidden');
                         document.getElementById('account-invite-code').textContent = info.generated_code;
+                        if (info.invite_use_count !== undefined && info.invite_use_count !== null) {
+                            const usesEl = document.getElementById('account-invite-uses');
+                            if (usesEl) {
+                                usesEl.textContent = 'Использован ' + info.invite_use_count + ' раз';
+                                usesEl.classList.remove('hidden');
+                            }
+                        }
+                    } else if (info.has_generated_invite && !info.generated_code) {
+                        document.getElementById('account-invite-deleted').classList.remove('hidden');
+                    } else {
+                        document.getElementById('account-no-invite').classList.remove('hidden');
                     }
                 } else {
                     document.getElementById('account-unverified').classList.remove('hidden');
@@ -98,6 +122,28 @@ const AuthApp = (() => {
         const session = await Api.getSession();
         if (session) {
             await showAccountView();
+        }
+    }
+
+    async function doGenerateInvite(btnId) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Генерация...';
+        try {
+            const code = await Api.generateInviteCode();
+            if (!code) throw new Error('Не удалось сгенерировать код');
+            document.getElementById('account-invite-code').textContent = code;
+            resetInviteState();
+            document.getElementById('account-has-invite').classList.remove('hidden');
+            const usesEl = document.getElementById('account-invite-uses');
+            if (usesEl) usesEl.classList.add('hidden');
+        } catch (err) {
+            alert(err.message || 'Ошибка генерации');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
         }
     }
 
@@ -118,24 +164,10 @@ const AuthApp = (() => {
             });
         }
 
-        document.getElementById('account-gen-invite').addEventListener('click', async () => {
-            const btn = document.getElementById('account-gen-invite');
-            btn.disabled = true;
-            btn.textContent = 'Генерация...';
-            try {
-                const code = await Api.generateInviteCode();
-                if (!code) throw new Error('Не удалось сгенерировать код');
-                document.getElementById('account-invite-code').textContent = code;
-                document.getElementById('account-no-invite').classList.add('hidden');
-                document.getElementById('account-has-invite').classList.remove('hidden');
-                btn.disabled = false;
-                btn.textContent = 'Сгенерировать инвайт-код';
-            } catch (err) {
-                alert(err.message || 'Ошибка генерации');
-                btn.disabled = false;
-                btn.textContent = 'Сгенерировать инвайт-код';
-            }
-        });
+        document.getElementById('account-gen-invite').addEventListener('click', () => doGenerateInvite('account-gen-invite'));
+
+        const regenBtn = document.getElementById('account-regen-invite');
+        if (regenBtn) regenBtn.addEventListener('click', () => doGenerateInvite('account-regen-invite'));
 
         document.getElementById('account-copy-code').addEventListener('click', () => {
             navigator.clipboard.writeText(document.getElementById('account-invite-code').textContent);
@@ -150,6 +182,7 @@ const AuthApp = (() => {
             document.getElementById('account-photo').classList.add('hidden');
             document.getElementById('account-photo-placeholder').classList.remove('hidden');
             document.getElementById('new-user-badge').classList.add('hidden');
+            resetInviteState();
             const nameEl = document.getElementById('account-name');
             if (nameEl) nameEl.textContent = '';
             const usernameEl = document.getElementById('account-username');

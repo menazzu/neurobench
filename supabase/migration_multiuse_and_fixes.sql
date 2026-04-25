@@ -98,7 +98,7 @@ BEGIN
 END;
 $$;
 
--- 7. Update admin_delete_invite_code: allow deleting if all uses exhausted
+-- 7. Update admin_delete_invite_code: allow deleting, reset owner's has_generated_invite
 CREATE OR REPLACE FUNCTION public.admin_delete_invite_code(p_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -109,6 +109,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()) THEN
         RETURN false;
     END IF;
+    UPDATE profiles
+    SET has_generated_invite = false,
+        generated_invite_code_id = NULL
+    WHERE generated_invite_code_id = p_id;
     DELETE FROM invite_code_uses WHERE invite_code_id = p_id;
     DELETE FROM invite_codes WHERE id = p_id;
     RETURN FOUND;
@@ -172,3 +176,51 @@ SET telegram_id = replace(p.email, 'telegram_', ''),
     is_verified = true
 WHERE p.email LIKE 'telegram_%@neurobench.local'
   AND p.telegram_id IS NULL;
+
+-- 13. Fix profiles where invite code was deleted but has_generated_invite still true
+UPDATE profiles
+SET has_generated_invite = false,
+    generated_invite_code_id = NULL
+WHERE has_generated_invite = true
+  AND generated_invite_code_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM invite_codes WHERE id = profiles.generated_invite_code_id);
+
+UPDATE profiles
+SET has_generated_invite = false,
+    generated_invite_code_id = NULL
+WHERE has_generated_invite = true
+  AND generated_invite_code_id IS NULL;
+
+-- 14. Update getUserDisplayName to include invite_use_count
+CREATE OR REPLACE FUNCTION public.get_user_display_name()
+RETURNS TABLE(
+    telegram_first_name TEXT,
+    telegram_last_name TEXT,
+    telegram_username TEXT,
+    telegram_photo_url TEXT,
+    display_name TEXT,
+    is_verified BOOLEAN,
+    has_generated_invite BOOLEAN,
+    generated_code TEXT,
+    invite_use_count INTEGER
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT p.telegram_first_name,
+           p.telegram_last_name,
+           p.telegram_username,
+           p.telegram_photo_url,
+           COALESCE(p.telegram_first_name, split_part(p.email, '@', 1)) AS display_name,
+           p.is_verified,
+           p.has_generated_invite,
+           ic.code AS generated_code,
+           ic.use_count AS invite_use_count
+    FROM profiles p
+    LEFT JOIN invite_codes ic ON p.generated_invite_code_id = ic.id
+    WHERE p.user_id = auth.uid();
+END;
+$$;

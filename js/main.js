@@ -34,8 +34,18 @@ async function initUserMenu() {
                     if (info.telegram_photo_url) {
                         const photoEl = document.getElementById('nav-user-photo');
                         const iconEl = document.getElementById('nav-user-icon');
-                        if (photoEl) { photoEl.src = info.telegram_photo_url; photoEl.classList.remove('hidden'); }
-                        if (iconEl) iconEl.classList.add('hidden');
+                        if (photoEl) {
+                            const url = info.telegram_photo_url.startsWith('/')
+                                ? 'https://t.me' + info.telegram_photo_url
+                                : info.telegram_photo_url;
+                            photoEl.src = url;
+                            photoEl.classList.remove('hidden');
+                            photoEl.onerror = () => {
+                                photoEl.classList.add('hidden');
+                                if (iconEl) iconEl.classList.remove('hidden');
+                            };
+                        }
+                        if (iconEl && photoEl) iconEl.classList.add('hidden');
                     }
                     if (info.is_verified && info.has_generated_invite && info.generated_code) {
                         const inviteSec = document.getElementById('nav-user-invite');
