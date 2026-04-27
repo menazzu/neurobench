@@ -214,6 +214,7 @@ const AdminApp = (() => {
         container.innerHTML = allModelsData.map(m => {
             const spaces = allModelSpacesData.filter(s => s.model_id === m.id);
             const params = allModelParamsData.filter(p => p.model_id === m.id);
+            const testCount = allResultsData.filter(r => r.model_id === m.id).length;
             const spacesStr = spaces.length > 0 ? spaces.map(s => escapeHtml(s.name)).join(', ') : '—';
             const paramsStr = params.length > 0 ? params.map(p => {
                 const vals = (p.model_param_values || []).map(v => escapeHtml(v.value)).join(', ');
@@ -224,7 +225,7 @@ const AdminApp = (() => {
                     <div class="flex justify-between items-start gap-4">
                         <div class="flex-1">
                             <span class="text-gray-200 font-bold text-sm">${escapeHtml(m.name)}</span>
-                            <span class="text-xs text-gray-500 block mt-1">id: ${m.id}</span>
+                            <span class="text-xs text-gray-500 block mt-1">id: ${m.id} | Тестов: ${testCount}</span>
                         </div>
                         <div class="flex-shrink-0 flex gap-2">
                             <button class="text-gray-400 hover:text-white transition-colors text-xs" onclick="AdminApp.editModel(${m.id})">Ред.</button>
