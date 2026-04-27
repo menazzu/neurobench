@@ -12,6 +12,8 @@ const LeaderboardModule = (() => {
     let activeMessageHandlers = [];
     let searchQuery = '';
     let barObserver = null;
+    let svgMessageHandlers = [];
+    let pendingTimeouts = [];
 
     async function load() {
         showLoading();
@@ -302,6 +304,10 @@ const LeaderboardModule = (() => {
         const listContainer = document.getElementById('benchmark-list');
         activeMessageHandlers.forEach(h => window.removeEventListener('message', h));
         activeMessageHandlers = [];
+        svgMessageHandlers.forEach(h => window.removeEventListener('message', h));
+        svgMessageHandlers = [];
+        pendingTimeouts.forEach(t => clearTimeout(t));
+        pendingTimeouts = [];
         listContainer.innerHTML = '';
 
         const grouped = {};
@@ -337,7 +343,7 @@ const LeaderboardModule = (() => {
             const q = searchQuery.toLowerCase();
             displayEntries = displayEntries.filter(e =>
                 e.model.name.toLowerCase().includes(q) ||
-                (e.model.author && e.model.author.toLowerCase().includes(q))
+                e.results.some(r => r.author && r.author.toLowerCase().includes(q))
             );
         }
 
@@ -400,7 +406,7 @@ const LeaderboardModule = (() => {
                 }
             }
 
-            const authorLine = model.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${model.author}</span>` : '';
+            const authorLine = activeResult.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${escapeHtml(activeResult.author)}</span>` : '';
             const rank = scoreRankMap.get(model.id) || 1;
             const rankDisplay = String(rank).padStart(2, '0');
 
@@ -491,17 +497,17 @@ const LeaderboardModule = (() => {
 
             function applyResult(result) {
                 overallEl.style.opacity = 0;
-                setTimeout(() => { overallEl.textContent = Math.floor(parseFloat(result.overall) || 0); overallEl.setAttribute('data-raw', result.overall); overallEl.style.opacity = 1; }, 150);
+                pendingTimeouts.push(setTimeout(() => { overallEl.textContent = Math.floor(parseFloat(result.overall) || 0); overallEl.setAttribute('data-raw', result.overall); overallEl.style.opacity = 1; }, 150));
                 if (dateDisplay) {
                     dateDisplay.style.opacity = 0;
-                    setTimeout(() => { dateDisplay.textContent = formatDateDisplay(result.test_date); dateDisplay.style.opacity = 1; }, 150);
+                    pendingTimeouts.push(setTimeout(() => { dateDisplay.textContent = formatDateDisplay(result.test_date); dateDisplay.style.opacity = 1; }, 150));
                 }
                 const keys = ['s_visual', 's_animation', 's_creative', 's_code', 's_detail'];
                 CRITERIA.forEach((c, ci) => {
                     const score = parseFloat(result[keys[ci]]) || 0;
                     const pct = (score / MAX_PER) * 100;
                     scoreVals[ci].style.opacity = 0;
-                    setTimeout(() => { scoreVals[ci].textContent = score.toFixed(1) + ' / 10'; scoreVals[ci].style.opacity = 1; }, 150);
+                    pendingTimeouts.push(setTimeout(() => { scoreVals[ci].textContent = score.toFixed(1) + ' / 10'; scoreVals[ci].style.opacity = 1; }, 150));
                     scoreBars[ci].style.width = pct + '%';
                     scoreBars[ci].setAttribute('data-target', pct + '%');
                 });

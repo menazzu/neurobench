@@ -13,7 +13,6 @@
 CREATE TABLE IF NOT EXISTS models_new (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    author TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 ALTER TABLE models_new ENABLE ROW LEVEL SECURITY;
@@ -49,13 +48,14 @@ CREATE TABLE IF NOT EXISTS model_param_values (
 );
 ALTER TABLE model_param_values ENABLE ROW LEVEL SECURITY;
 
--- Results: test result = model + prompt + space + scores + SVG
+-- Results: test result = model + prompt + space + scores + SVG + author
 CREATE TABLE IF NOT EXISTS results (
     id SERIAL PRIMARY KEY,
     model_id INTEGER NOT NULL REFERENCES models_new(id) ON DELETE CASCADE,
     prompt_id INTEGER NOT NULL REFERENCES prompts(id) ON DELETE CASCADE,
     model_space_id INTEGER REFERENCES model_spaces(id) ON DELETE SET NULL,
     test_date DATE,
+    author TEXT,
     s_visual NUMERIC(3,1) NOT NULL DEFAULT 0,
     s_animation NUMERIC(3,1) NOT NULL DEFAULT 0,
     s_creative NUMERIC(3,1) NOT NULL DEFAULT 0,
@@ -132,16 +132,17 @@ CREATE POLICY "admin_all_result_param_values" ON result_param_values
 -- STEP 3: Migrate data from old models table
 -- ==========================================
 
--- 3a. Deduplicate models by (name, author) and insert into models_new
+-- 3a. Deduplicate models by name and insert into models_new
 --     NOTE: Old model names may contain parameter info as a hack,
 --     e.g. "Gemini 2.5 Pro (High Think + Tools)".
 --     These need to be manually cleaned up AFTER migration.
 --     The migration preserves names as-is for safety.
-INSERT INTO models_new (name, author)
-SELECT DISTINCT ON (name, COALESCE(author, ''))
-    name, author
+--     Author is NOT migrated to models — it belongs to results (test author).
+INSERT INTO models_new (name)
+SELECT DISTINCT ON (name)
+    name
 FROM models
-ORDER BY name, COALESCE(author, '');
+ORDER BY name;
 
 -- 3b. Extract unique (model, space_label) combos into model_spaces
 INSERT INTO model_spaces (model_id, name)
@@ -151,18 +152,12 @@ CROSS JOIN LATERAL jsonb_array_elements(
     CASE WHEN jsonb_typeof(m.variants) = 'array' THEN m.variants ELSE '[]'::jsonb END
 ) AS v
 JOIN models_new mn ON mn.name = m.name
-    AND (mn.author = m.author OR (mn.author IS NULL AND m.author IS NULL))
 WHERE v->>'label' IS NOT NULL
   AND v->>'label' != '';
 
 -- 3c. Migrate each variant into a result row
---     NOTE: Parameter info is NOT migrated into model_params/result_param_values
---     because it was embedded in model names as free text.
---     After running this migration, manually:
---       1. Clean model names (remove parameter suffixes)
---       2. Create model_params and model_param_values
---       3. Link existing results to param values via result_param_values
-INSERT INTO results (model_id, prompt_id, model_space_id, test_date,
+--     Author moves from models to results (test author, not model author).
+INSERT INTO results (model_id, prompt_id, model_space_id, test_date, author,
     s_visual, s_animation, s_creative, s_code, s_detail, overall, svg_content)
 SELECT
     mn.id,
@@ -183,6 +178,7 @@ SELECT
             (v->>'date')::date
         ELSE NULL
     END,
+    m.author,
     COALESCE((v->'scores'->>0)::numeric, 0),
     COALESCE((v->'scores'->>1)::numeric, 0),
     COALESCE((v->'scores'->>2)::numeric, 0),
@@ -195,7 +191,6 @@ CROSS JOIN LATERAL jsonb_array_elements(
     CASE WHEN jsonb_typeof(m.variants) = 'array' THEN m.variants ELSE '[]'::jsonb END
 ) AS v
 JOIN models_new mn ON mn.name = m.name
-    AND (mn.author = m.author OR (mn.author IS NULL AND m.author IS NULL))
 LEFT JOIN model_spaces ms ON ms.model_id = mn.id AND ms.name = v->>'label';
 
 -- ==========================================
@@ -240,7 +235,19 @@ CREATE POLICY "admin_users_self_read" ON admin_users
     FOR SELECT USING (user_id = auth.uid());
 
 -- ==========================================
--- STEP 7: Reload PostgREST schema cache
+-- STEP 7: Add author column to results (if not already present)
+-- ==========================================
+
+ALTER TABLE results ADD COLUMN IF NOT EXISTS author TEXT;
+
+-- ==========================================
+-- STEP 8: Drop author from models (moved to results)
+-- ==========================================
+
+ALTER TABLE models DROP COLUMN IF EXISTS author;
+
+-- ==========================================
+-- STEP 9: Reload PostGREST schema cache
 -- ==========================================
 
 NOTIFY pgrst, 'reload schema';

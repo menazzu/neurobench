@@ -224,7 +224,6 @@ const AdminApp = (() => {
                     <div class="flex justify-between items-start gap-4">
                         <div class="flex-1">
                             <span class="text-gray-200 font-bold text-sm">${escapeHtml(m.name)}</span>
-                            ${m.author ? `<span class="text-gray-500 ml-2 text-xs">${escapeHtml(m.author)}</span>` : ''}
                             <span class="text-xs text-gray-500 block mt-1">id: ${m.id}</span>
                         </div>
                         <div class="flex-shrink-0 flex gap-2">
@@ -254,7 +253,6 @@ const AdminApp = (() => {
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Новая модель</h3>
             <form id="model-form" class="flex flex-col gap-4">
                 <input name="name" placeholder="Gemini 2.5 Pro" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <input name="author" placeholder="Автор (опционально)" class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Сохранить</button>
                     <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-border py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
@@ -264,7 +262,7 @@ const AdminApp = (() => {
         document.getElementById('model-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            try { await Api.addModel({ name: fd.get('name'), author: fd.get('author') || null }); await loadModels(); hideModal(); }
+            try { await Api.addModel({ name: fd.get('name') }); await loadModels(); hideModal(); }
             catch (err) { alert('Ошибка: ' + err.message); }
         });
     }
@@ -276,7 +274,6 @@ const AdminApp = (() => {
             <h3 class="font-title text-lg uppercase tracking-widest mb-6">Редактировать модель</h3>
             <form id="model-edit-form" class="flex flex-col gap-4">
                 <input name="name" value="${model.name || ''}" placeholder="Название" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
-                <input name="author" value="${model.author || ''}" placeholder="Автор (опционально)" class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <div class="flex gap-3 mt-2">
                     <button type="submit" class="flex-1 bg-white text-black py-3 text-xs uppercase tracking-widest font-bold hover:bg-gray-200 transition-colors">Обновить</button>
                     <button type="button" onclick="AdminApp.closeModal()" class="flex-1 border border-border py-3 text-xs uppercase tracking-widest hover:bg-white/10 transition-colors">Отмена</button>
@@ -286,7 +283,7 @@ const AdminApp = (() => {
         document.getElementById('model-edit-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
-            try { await Api.updateModel(id, { name: fd.get('name'), author: fd.get('author') || null }); await loadModels(); hideModal(); }
+            try { await Api.updateModel(id, { name: fd.get('name') }); await loadModels(); hideModal(); }
             catch (err) { alert('Ошибка: ' + err.message); }
         });
     }
@@ -511,6 +508,7 @@ const AdminApp = (() => {
                         <span class="text-gray-200 font-bold">${escapeHtml(modelName)}</span>
                         <span class="text-blue-400/70 ml-2 text-xs">${escapeHtml(spaceName)}</span>
                         ${paramLabel ? `<span class="text-purple-400/70 ml-2 text-xs">${escapeHtml(paramLabel)}</span>` : ''}
+                        ${r.author ? `<span class="text-gray-500 ml-2 text-xs">by ${escapeHtml(r.author)}</span>` : ''}
                         <span class="text-gray-500 ml-2 text-xs">${escapeHtml(promptName)}</span>
                         <span class="text-xs text-gray-500 block mt-1">
                             id: ${r.id} | Дата: ${dateStr} | Балл: ${r.overall}${r.svg_content ? ' | SVG ✓' : ''}
@@ -538,6 +536,7 @@ const AdminApp = (() => {
         const sCode = result ? result.s_code : '';
         const sDetail = result ? result.s_detail : '';
         const svgContent = result ? (result.svg_content || '') : '';
+        const author = result ? (result.author || '') : '';
         const existingParamValueIds = result ? (result.result_param_values || []).map(rpv => rpv.param_value_id) : [];
 
         const promptsOptions = allPromptsData.map(p => {
@@ -626,6 +625,7 @@ const AdminApp = (() => {
                     <span class="text-xs uppercase tracking-widest text-gray-400">Дата теста *</span>
                     <input name="test_date" type="date" value="${testDate}" required class="w-full bg-surface border border-border px-4 py-3 text-sm text-white outline-none focus:border-white/50">
                 </label>
+                <input name="author" value="${escapeHtml(author)}" placeholder="Автор теста (опционально)" class="w-full bg-surface border border-border px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-white/50">
                 <div class="border border-border p-4">
                     <p class="text-xs uppercase tracking-widest text-gray-400 mb-3">Оценки</p>
                     <div class="grid grid-cols-5 gap-2">
@@ -795,6 +795,7 @@ const AdminApp = (() => {
                 prompt_id: parseInt(fd.get('prompt_id')),
                 model_space_id: parseInt(spaceIdVal),
                 test_date: fd.get('test_date') || null,
+                author: fd.get('author') || null,
                 ...scores,
                 overall,
                 svg_content: document.getElementById('svg-content-area').value || null
