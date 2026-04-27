@@ -202,21 +202,22 @@ LEFT JOIN model_spaces ms ON ms.model_id = mn.id AND ms.name = v->>'label';
 -- STEP 4: Swap tables — rename old, promote new
 -- ==========================================
 
--- 4a. Rename old models table (keep as backup)
+-- 4a. Drop identity from old models.id so we can freely rename the sequence
+ALTER TABLE models ALTER COLUMN id DROP IDENTITY IF EXISTS;
+
+-- 4b. Rename old models table (keep as backup)
 ALTER TABLE models RENAME TO models_old;
 
--- 4b. Rename old sequence out of the way first
-ALTER SEQUENCE IF EXISTS models_id_seq RENAME TO models_old_id_seq;
+-- 4c. Rename old sequence out of the way
+ALTER SEQUENCE models_id_seq RENAME TO models_old_id_seq;
 
--- 4c. Rename models_new → models (now the canonical table)
+-- 4d. Rename models_new → models (now the canonical table)
 ALTER TABLE models_new RENAME TO models;
 
--- 4d. Rename the new sequence to the canonical name
+-- 4e. Rename the new sequence to the canonical name
 ALTER SEQUENCE models_new_id_seq RENAME TO models_id_seq;
 ALTER TABLE models ALTER COLUMN id SET DEFAULT nextval('models_id_seq');
-
--- 4e. Fix old backup table to use its renamed sequence
-ALTER TABLE models_old ALTER COLUMN id SET DEFAULT nextval('models_old_id_seq');
+ALTER SEQUENCE models_id_seq OWNED BY models.id;
 
 -- ==========================================
 -- STEP 5: Indexes for performance
