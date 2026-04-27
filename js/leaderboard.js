@@ -12,7 +12,6 @@ const LeaderboardModule = (() => {
     let activeMessageHandlers = [];
     let searchQuery = '';
     let barObserver = null;
-    let svgMessageHandlers = [];
     let pendingTimeouts = [];
 
     async function load() {
@@ -200,15 +199,15 @@ const LeaderboardModule = (() => {
 
     function renderBars(result) {
         let scoresHtml = '';
+        const keys = ['s_visual', 's_animation', 's_creative', 's_code', 's_detail'];
         CRITERIA.forEach((c, ci) => {
-            const keys = ['s_visual', 's_animation', 's_creative', 's_code', 's_detail'];
             const score = parseFloat(result[keys[ci]]) || 0;
             const pct = (score / MAX_PER) * 100;
             scoresHtml += `
                 <div class="w-full">
                     <div class="flex justify-between text-xs mb-2.5 uppercase tracking-widest text-gray-400">
                         <span>${c}</span>
-                        <span class="text-white font-bold transition-opacity duration-300 score-val" data-ci="${ci}">${score.toFixed(1)} / 10</span>
+                        <span class="text-white font-bold">${score.toFixed(1)} / 10</span>
                     </div>
                     <div class="h-[18px] w-full bg-black/40 border border-border relative overflow-hidden">
                         <div class="hatching-fill absolute top-0 left-0 h-full w-0 transition-all duration-[1.5s] cubic-bezier(0.19, 1, 0.22, 1) score-bar" data-ci="${ci}" data-target="${pct}%"></div>
@@ -286,141 +285,53 @@ const LeaderboardModule = (() => {
         }).filter(Boolean).join(' + ');
     }
 
-    function buildVariantKey(result) {
-        const spaceName = result.model_spaces ? result.model_spaces.name : '_default';
-        const paramLabel = getParamLabel(result);
-        return paramLabel ? `${spaceName}|||${paramLabel}` : spaceName;
-    }
-
-    function buildVariantDisplayLabel(key) {
-        if (key.includes('|||')) {
-            const [space, params] = key.split('|||');
-            return { space, params, isParamVariant: true };
-        }
-        return { space: key, params: '', isParamVariant: false };
-    }
-
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
         activeMessageHandlers.forEach(h => window.removeEventListener('message', h));
         activeMessageHandlers = [];
-        svgMessageHandlers.forEach(h => window.removeEventListener('message', h));
-        svgMessageHandlers = [];
         pendingTimeouts.forEach(t => clearTimeout(t));
         pendingTimeouts = [];
         listContainer.innerHTML = '';
 
-        const grouped = {};
-        resultsData.forEach(r => {
-            const modelId = r.model_id;
-            if (!grouped[modelId]) grouped[modelId] = { model: r.models, results: [] };
-            grouped[modelId].results.push(r);
-        });
-
-        const modelEntries = Object.values(grouped);
-
-        const scoreRankMap = new Map();
-        modelEntries.forEach((entry, i) => {
-            const bestOverall = Math.max(...entry.results.map(r => parseFloat(r.overall) || 0));
-            entry.bestOverall = bestOverall;
-        });
-        modelEntries.sort((a, b) => b.bestOverall - a.bestOverall);
-        modelEntries.forEach((entry, i) => scoreRankMap.set(entry.model.id, i + 1));
-
-        let displayEntries = [...modelEntries];
+        let displayResults = [...resultsData];
 
         if (currentSort === 'date') {
-            displayEntries.sort((a, b) => {
-                const aDate = Math.max(...a.results.map(r => parseDate(r.test_date)));
-                const bDate = Math.max(...b.results.map(r => parseDate(r.test_date)));
-                return bDate - aDate;
-            });
+            displayResults.sort((a, b) => parseDate(b.test_date) - parseDate(a.test_date));
         }
 
-        if (currentTop !== 'all') displayEntries = displayEntries.slice(0, parseInt(currentTop));
+        if (currentTop !== 'all') displayResults = displayResults.slice(0, parseInt(currentTop));
 
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
-            displayEntries = displayEntries.filter(e =>
-                e.model.name.toLowerCase().includes(q) ||
-                e.results.some(r => r.author && r.author.toLowerCase().includes(q))
-            );
+            displayResults = displayResults.filter(r => {
+                const modelName = r.models ? r.models.name : '';
+                return modelName.toLowerCase().includes(q) ||
+                    (r.author && r.author.toLowerCase().includes(q));
+            });
         }
 
         hideNoResults();
-        if (displayEntries.length === 0 && modelEntries.length > 0) { showNoResults(); return; }
+        if (displayResults.length === 0 && resultsData.length > 0) { showNoResults(); return; }
 
-        displayEntries.forEach((entry) => {
-            const model = entry.model;
-            const results = entry.results;
-
-            const variantGroups = {};
-            results.forEach(r => {
-                const key = buildVariantKey(r);
-                if (!variantGroups[key]) variantGroups[key] = [];
-                variantGroups[key].push(r);
-            });
-
-            const variantKeys = Object.keys(variantGroups);
-            if (variantKeys.length === 0) return;
-
-            let activeKey;
-            if (currentSort === 'date') {
-                activeKey = variantKeys.reduce((best, key) => {
-                    const bestDate = Math.max(...variantGroups[best].map(r => parseDate(r.test_date)));
-                    const keyDate = Math.max(...variantGroups[key].map(r => parseDate(r.test_date)));
-                    return keyDate > bestDate ? key : best;
-                }, variantKeys[0]);
-            } else {
-                activeKey = variantKeys.reduce((best, key) => {
-                    const bestScore = Math.max(...variantGroups[best].map(r => parseFloat(r.overall) || 0));
-                    const keyScore = Math.max(...variantGroups[key].map(r => parseFloat(r.overall) || 0));
-                    return keyScore > bestScore ? key : best;
-                }, variantKeys[0]);
-            }
-
-            const activeResults = variantGroups[activeKey];
-            let activeResult;
-            if (currentSort === 'date') {
-                activeResult = [...activeResults].sort((a, b) => parseDate(b.test_date) - parseDate(a.test_date))[0];
-            } else {
-                activeResult = activeResults.reduce((best, r) => (parseFloat(r.overall) || 0) > (parseFloat(best.overall) || 0) ? r : best, activeResults[0]);
-            }
-
-            let scoresHtml = renderBars(activeResult);
-
-            let variantsHtml = '';
-            if (variantKeys.length > 1) {
-                const pills = variantKeys.map(key => {
-                    const { space, params, isParamVariant } = buildVariantDisplayLabel(key);
-                    const displayLabel = isParamVariant ? (params || space) : space;
-                    const activeClass = key === activeKey ? 'bg-[#F2F2F2] text-black border-[#F2F2F2]' : 'bg-transparent text-gray-400 border-white/20 hover:border-white/50 hover:text-white cursor-pointer';
-                    const titleAttr = isParamVariant ? `${space} — ${params}` : space;
-                    return `<button class="variant-pill px-3 py-1.5 text-[10px] uppercase tracking-wider border transition-all duration-200 ${activeClass}" data-key="${escapeHtml(key)}" title="${escapeHtml(titleAttr)}">${escapeHtml(displayLabel)}</button>`;
-                }).join('');
-                variantsHtml = `<div class="flex flex-wrap gap-1.5 mb-1 variant-pills-container">${pills}</div>`;
-            } else {
-                const { space, params, isParamVariant } = buildVariantDisplayLabel(activeKey);
-                if (space !== '_default') {
-                    variantsHtml = `<div class="text-[12px] font-bold tracking-[0.15em] text-gray-300 uppercase mb-1">${escapeHtml(space)}${params ? ` <span class="text-purple-400/60 font-normal text-[10px]">${escapeHtml(params)}</span>` : ''}</div>`;
-                }
-            }
-
-            const authorLine = activeResult.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${escapeHtml(activeResult.author)}</span>` : '';
-            const rank = scoreRankMap.get(model.id) || 1;
+        displayResults.forEach((result, idx) => {
+            const modelName = result.models ? result.models.name : '—';
+            const spaceName = result.model_spaces ? result.model_spaces.name : '';
+            const paramLabel = getParamLabel(result);
+            const authorLine = result.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${escapeHtml(result.author)}</span>` : '';
+            const rank = idx + 1;
             const rankDisplay = String(rank).padStart(2, '0');
 
-            const dateSelectorHtml = `
-                <div class="relative inline-block text-left mb-3 w-fit mx-auto lg:mx-0 date-dropdown-container">
-                    <button type="button" class="date-dropdown-btn text-[10px] uppercase font-mono text-gray-400 tracking-widest bg-white/5 hover:bg-white/10 transition-colors border border-white/20 px-3 py-1.5 flex items-center gap-2 cursor-pointer outline-none">
-                        Дата теста: <span class="text-white ml-1 date-display-span transition-opacity duration-300">${formatDateDisplay(activeResult.test_date)}</span>
-                        <svg class="w-3 h-3 text-white date-chevron transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div class="date-dropdown-menu absolute z-50 top-full mt-2 left-0 w-max min-w-full bg-surface border border-border shadow-lg opacity-0 invisible transition-all duration-200 transform translate-y-[-10px] overflow-hidden"></div>
-                </div>
-            `;
+            let labelsHtml = '';
+            if (spaceName) {
+                labelsHtml += `<span class="text-[12px] font-bold tracking-[0.15em] text-gray-300 uppercase">${escapeHtml(spaceName)}</span>`;
+            }
+            if (paramLabel) {
+                labelsHtml += ` <span class="text-[10px] text-purple-400/60 font-mono">${escapeHtml(paramLabel)}</span>`;
+            }
 
-            const svgBlock = renderSvgBlock(activeResult);
+            const scoresHtml = renderBars(result);
+            const svgBlock = renderSvgBlock(result);
+            const dateStr = formatDateDisplay(result.test_date);
 
             const card = document.createElement('div');
             card.className = "matte-card p-4 sm:p-8 border border-border hover:border-white/50 transition-colors duration-300 flex flex-col bg-surface benchmark-card group";
@@ -429,9 +340,9 @@ const LeaderboardModule = (() => {
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
                     <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-border pb-4 sm:pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
                         <span class="text-[10px] font-mono text-white/30 group-hover:text-white/50 transition-colors tracking-widest mb-1">#${rankDisplay}</span>
-                        <h3 class="font-title text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${escapeHtml(model.name)}</h3>
-                        ${dateSelectorHtml}
-                        <div class="mt-2">${variantsHtml} ${authorLine}</div>
+                        <h3 class="font-title text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${escapeHtml(modelName)}</h3>
+                        <span class="text-[10px] uppercase font-mono text-gray-400 tracking-widest">${dateStr}</span>
+                        <div class="mt-2">${labelsHtml} ${authorLine}</div>
                     </div>
                     <div class="w-full lg:flex-1 flex flex-col md:flex-row items-center justify-between mt-4 sm:mt-6 lg:mt-0 lg:pl-10 group/bracket">
                         <div class="flex-grow flex flex-col gap-y-4 sm:gap-y-5 w-full scores-container self-stretch justify-center">
@@ -442,7 +353,7 @@ const LeaderboardModule = (() => {
                         </svg>
                         <div class="flex-shrink-0 relative z-30 group/score text-center md:text-left mt-6 sm:mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
                             <span class="text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
-                            <span class="font-title text-[48px] sm:text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score transition-opacity duration-300" data-raw="${activeResult.overall}">${Math.floor(parseFloat(activeResult.overall) || 0)}</span>
+                            <span class="font-title text-[48px] sm:text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score" data-raw="${result.overall}">${Math.floor(parseFloat(result.overall) || 0)}</span>
                             ${svgBlock}
                             <div class="absolute left-1/2 lg:left-0 -translate-x-1/2 lg:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-surface border border-border p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
                                 Формула вычисления:<br>
@@ -453,8 +364,8 @@ const LeaderboardModule = (() => {
                 </div>
             `;
 
-            if (activeResult.svg_content) {
-                const sanitized = sanitizeSvg(activeResult.svg_content);
+            if (result.svg_content) {
+                const sanitized = sanitizeSvg(result.svg_content);
                 const svgIframe = card.querySelector('.svg-iframe');
                 if (svgIframe) {
                     const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:100%;height:100%;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
@@ -477,7 +388,7 @@ const LeaderboardModule = (() => {
                         e.preventDefault();
                         e.stopPropagation();
                         const slug = downloadBtn.getAttribute('data-model-slug');
-                        const blob = new Blob([activeResult.svg_content], { type: 'image/svg+xml' });
+                        const blob = new Blob([result.svg_content], { type: 'image/svg+xml' });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url; a.download = slug + '.svg';
@@ -487,111 +398,6 @@ const LeaderboardModule = (() => {
                 }
             }
 
-            const dateBtn = card.querySelector('.date-dropdown-btn');
-            const dateMenu = card.querySelector('.date-dropdown-menu');
-            const dateDisplay = card.querySelector('.date-display-span');
-            const chevron = card.querySelector('.date-chevron');
-            const overallEl = card.querySelector('.overall-score');
-            const scoreVals = card.querySelectorAll('.score-val');
-            const scoreBars = card.querySelectorAll('.score-bar');
-
-            function applyResult(result) {
-                overallEl.style.opacity = 0;
-                pendingTimeouts.push(setTimeout(() => { overallEl.textContent = Math.floor(parseFloat(result.overall) || 0); overallEl.setAttribute('data-raw', result.overall); overallEl.style.opacity = 1; }, 150));
-                if (dateDisplay) {
-                    dateDisplay.style.opacity = 0;
-                    pendingTimeouts.push(setTimeout(() => { dateDisplay.textContent = formatDateDisplay(result.test_date); dateDisplay.style.opacity = 1; }, 150));
-                }
-                const keys = ['s_visual', 's_animation', 's_creative', 's_code', 's_detail'];
-                CRITERIA.forEach((c, ci) => {
-                    const score = parseFloat(result[keys[ci]]) || 0;
-                    const pct = (score / MAX_PER) * 100;
-                    scoreVals[ci].style.opacity = 0;
-                    pendingTimeouts.push(setTimeout(() => { scoreVals[ci].textContent = score.toFixed(1) + ' / 10'; scoreVals[ci].style.opacity = 1; }, 150));
-                    scoreBars[ci].style.width = pct + '%';
-                    scoreBars[ci].setAttribute('data-target', pct + '%');
-                });
-
-                if (result.svg_content && result.svg_content !== (activeResult.svg_content || '')) {
-                    const sanitized = sanitizeSvg(result.svg_content);
-                    const svgIframe = card.querySelector('.svg-iframe');
-                    if (svgIframe) {
-                        svgIframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:100%;height:100%;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
-                    }
-                }
-            }
-
-            function closeMenu() {
-                dateMenu.classList.remove('opacity-100', 'visible', 'translate-y-0');
-                dateMenu.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
-                chevron.classList.remove('rotate-180');
-            }
-            function openMenu() {
-                document.querySelectorAll('.date-dropdown-menu.visible').forEach(m => {
-                    m.classList.remove('opacity-100', 'visible', 'translate-y-0');
-                    m.classList.add('opacity-0', 'invisible', 'translate-y-[-10px]');
-                });
-                document.querySelectorAll('.date-chevron.rotate-180').forEach(c => c.classList.remove('rotate-180'));
-                dateMenu.classList.remove('opacity-0', 'invisible', 'translate-y-[-10px]');
-                dateMenu.classList.add('opacity-100', 'visible', 'translate-y-0');
-                chevron.classList.add('rotate-180');
-            }
-
-            function buildDateMenu(variantKey) {
-                const datesForVariant = variantGroups[variantKey];
-                if (datesForVariant.length <= 1) {
-                    chevron.style.display = 'none';
-                    dateBtn.style.pointerEvents = 'none';
-                    dateBtn.classList.remove('hover:bg-white/10');
-                    dateMenu.innerHTML = '';
-                    if (datesForVariant.length === 1) applyResult(datesForVariant[0]);
-                    return;
-                }
-                chevron.style.display = 'block';
-                dateBtn.style.pointerEvents = 'auto';
-                dateBtn.classList.add('hover:bg-white/10');
-                let menuHtml = '';
-                datesForVariant.forEach((r, idx) => {
-                    const paramLabel = getParamLabel(r);
-                    const dateLabel = formatDateDisplay(r.test_date) + (paramLabel ? ` (${paramLabel})` : '');
-                    menuHtml += `<a href="#" class="block px-4 py-2.5 text-[10px] uppercase font-mono text-gray-300 hover:text-white hover:bg-white/10 date-option transition-colors border-b border-white/5 last:border-b-0" data-idx="${idx}">${escapeHtml(dateLabel)}</a>`;
-                });
-                dateMenu.innerHTML = menuHtml;
-                dateMenu.querySelectorAll('.date-option').forEach(opt => {
-                    opt.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        applyResult(datesForVariant[parseInt(opt.getAttribute('data-idx'))]);
-                        closeMenu();
-                    });
-                });
-            }
-
-            if (dateBtn) {
-                dateBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dateMenu.classList.contains('visible') ? closeMenu() : openMenu();
-                });
-            }
-
-            if (variantKeys.length > 1) {
-                const pills = card.querySelectorAll('.variant-pill');
-                pills.forEach(pill => {
-                    pill.addEventListener('click', (e) => {
-                        const key = e.target.getAttribute('data-key');
-                        pills.forEach(p => { p.className = "variant-pill px-3 py-1.5 text-[10px] uppercase tracking-wider border transition-all duration-200 cursor-pointer bg-transparent text-gray-400 border-white/20 hover:border-white/50 hover:text-white"; });
-                        e.target.className = "variant-pill px-3 py-1.5 text-[10px] uppercase tracking-wider border transition-all duration-200 bg-[#F2F2F2] text-black border-[#F2F2F2]";
-                        buildDateMenu(key);
-                        const variantResults = variantGroups[key];
-                        if (currentSort === 'date') {
-                            applyResult([...variantResults].sort((a, b) => parseDate(b.test_date) - parseDate(a.test_date))[0]);
-                        } else {
-                            applyResult(variantResults.reduce((best, r) => (parseFloat(r.overall) || 0) > (parseFloat(best.overall) || 0) ? r : best, variantResults[0]));
-                        }
-                    });
-                });
-            }
-
-            buildDateMenu(activeKey);
             listContainer.appendChild(card);
         });
 
