@@ -11,6 +11,7 @@ const AdminApp = (() => {
     let currentInviteFilter = 'all';
     let currentResultPromptFilter = 'all';
     let currentResultModelFilter = 'all';
+    let modelSearchQuery = '';
 
     function showModal(html) {
         document.getElementById('modal-content').innerHTML = html;
@@ -207,11 +208,16 @@ const AdminApp = (() => {
 
     function renderModelsList() {
         const container = document.getElementById('models-list');
-        if (allModelsData.length === 0) {
+        let filteredModels = allModelsData;
+        if (modelSearchQuery) {
+            const q = modelSearchQuery.toLowerCase();
+            filteredModels = allModelsData.filter(m => m.name.toLowerCase().includes(q));
+        }
+        if (filteredModels.length === 0) {
             container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет моделей</p>';
             return;
         }
-        container.innerHTML = allModelsData.map(m => {
+        container.innerHTML = filteredModels.map(m => {
             const spaces = allModelSpacesData.filter(s => s.model_id === m.id);
             const params = allModelParamsData.filter(p => p.model_id === m.id);
             const testCount = allResultsData.filter(r => r.model_id === m.id).length;
@@ -1000,6 +1006,11 @@ const AdminApp = (() => {
         document.getElementById('add-model-btn').addEventListener('click', showAddModelForm);
         document.getElementById('add-prompt-btn').addEventListener('click', showAddPromptForm);
         document.getElementById('add-result-btn').addEventListener('click', showAddResultForm);
+
+        document.getElementById('model-settings-search').addEventListener('input', (e) => {
+            modelSearchQuery = e.target.value.trim();
+            renderModelsList();
+        });
 
         document.getElementById('add-invite-btn').addEventListener('click', async () => {
             const maxUses = prompt('Максимальное количество активаций (пусто = безлимит):', '10');

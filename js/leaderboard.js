@@ -9,6 +9,7 @@ const LeaderboardModule = (() => {
     let currentTop = 'all';
     let currentSort = 'score';
     let resultsData = [];
+    let allModelsCount = 0;
     let activeMessageHandlers = [];
     let searchQuery = '';
     let barObserver = null;
@@ -28,6 +29,10 @@ const LeaderboardModule = (() => {
             renderDifficultyFilters();
             return;
         }
+        try {
+            const allModels = await Api.getAllModels();
+            allModelsCount = allModels.length;
+        } catch { allModelsCount = 0; }
         hideLoading();
         renderDifficultyFilters();
         selectDifficulty('easy');
@@ -285,6 +290,15 @@ const LeaderboardModule = (() => {
         }).filter(Boolean).join(' + ');
     }
 
+    function updateTitleCounter() {
+        const titleEl = document.getElementById('leaderboard-title');
+        if (!titleEl) return;
+        const testedModelIds = new Set(resultsData.map(r => r.model_id));
+        const tested = testedModelIds.size;
+        const total = allModelsCount;
+        titleEl.textContent = `Лидерборд ${tested}/${total}`;
+    }
+
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
         activeMessageHandlers.forEach(h => window.removeEventListener('message', h));
@@ -292,6 +306,8 @@ const LeaderboardModule = (() => {
         pendingTimeouts.forEach(t => clearTimeout(t));
         pendingTimeouts = [];
         listContainer.innerHTML = '';
+
+        updateTitleCounter();
 
         let displayResults = [...resultsData];
 
