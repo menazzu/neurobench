@@ -15,6 +15,8 @@ const Api = (() => {
         getClient();
     }
 
+    // ========== PROMPTS ==========
+
     async function getPromptsByDifficulty(difficulty) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
@@ -31,18 +33,35 @@ const Api = (() => {
         return data;
     }
 
-    async function getModelsByPrompt(promptId) {
+    async function addPrompt(prompt) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.from('models').select('*').eq('prompt_id', promptId).order('best_overall', { ascending: false });
+        const { data, error } = await client.from('prompts').insert(prompt).select();
         if (error) throw error;
         return data;
     }
 
+    async function updatePrompt(id, prompt) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('prompts').update(prompt).eq('id', id).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function deletePrompt(id) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { error } = await client.from('prompts').delete().eq('id', id);
+        if (error) throw error;
+    }
+
+    // ========== MODELS (global catalog) ==========
+
     async function getAllModels() {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.from('models').select('*, prompts(id, difficulty, text)').order('prompt_id', { ascending: true }).order('best_overall', { ascending: false });
+        const { data, error } = await client.from('models').select('*').order('name');
         if (error) throw error;
         return data;
     }
@@ -70,28 +89,184 @@ const Api = (() => {
         if (error) throw error;
     }
 
-    async function addPrompt(prompt) {
+    // ========== MODEL SPACES (per model, macro) ==========
+
+    async function getModelSpaces(modelId) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.from('prompts').insert(prompt).select();
+        const { data, error } = await client.from('model_spaces').select('*').eq('model_id', modelId).order('id');
         if (error) throw error;
         return data;
     }
 
-    async function updatePrompt(id, prompt) {
+    async function getAllModelSpaces() {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { data, error } = await client.from('prompts').update(prompt).eq('id', id).select();
+        const { data, error } = await client.from('model_spaces').select('*, models(id, name)').order('model_id').order('id');
         if (error) throw error;
         return data;
     }
 
-    async function deletePrompt(id) {
+    async function addModelSpace(space) {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
-        const { error } = await client.from('prompts').delete().eq('id', id);
+        const { data, error } = await client.from('model_spaces').insert(space).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function updateModelSpace(id, space) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_spaces').update(space).eq('id', id).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function deleteModelSpace(id) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { error } = await client.from('model_spaces').delete().eq('id', id);
         if (error) throw error;
     }
+
+    // ========== MODEL PARAMS (per model, micro definitions) ==========
+
+    async function getModelParams(modelId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_params').select('*, model_param_values(id, value)').eq('model_id', modelId).order('id');
+        if (error) throw error;
+        return data;
+    }
+
+    async function getAllModelParams() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_params').select('*, models(id, name), model_param_values(id, value)').order('model_id').order('id');
+        if (error) throw error;
+        return data;
+    }
+
+    async function addModelParam(param) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_params').insert(param).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function updateModelParam(id, param) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_params').update(param).eq('id', id).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function deleteModelParam(id) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { error } = await client.from('model_params').delete().eq('id', id);
+        if (error) throw error;
+    }
+
+    // ========== MODEL PARAM VALUES ==========
+
+    async function addModelParamValue(paramValue) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_param_values').insert(paramValue).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function updateModelParamValue(id, paramValue) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('model_param_values').update(paramValue).eq('id', id).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function deleteModelParamValue(id) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { error } = await client.from('model_param_values').delete().eq('id', id);
+        if (error) throw error;
+    }
+
+    // ========== RESULTS ==========
+
+    async function getResultsByPrompt(promptId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('results')
+            .select('*, models(id, name, author), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
+            .eq('prompt_id', promptId)
+            .order('overall', { ascending: false });
+        if (error) throw error;
+        return data;
+    }
+
+    async function getAllResults() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('results')
+            .select('*, models(id, name, author), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
+            .order('prompt_id')
+            .order('overall', { ascending: false });
+        if (error) throw error;
+        return data;
+    }
+
+    async function addResult(result) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('results').insert(result).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function updateResult(id, result) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('results').update(result).eq('id', id).select();
+        if (error) throw error;
+        return data;
+    }
+
+    async function deleteResult(id) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { error } = await client.from('results').delete().eq('id', id);
+        if (error) throw error;
+    }
+
+    // ========== RESULT PARAM VALUES (junction) ==========
+
+    async function setResultParamValues(resultId, paramValueIds) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        await client.from('result_param_values').delete().eq('result_id', resultId);
+        if (paramValueIds.length > 0) {
+            const rows = paramValueIds.map(pvId => ({ result_id: resultId, param_value_id: pvId }));
+            const { error } = await client.from('result_param_values').insert(rows);
+            if (error) throw error;
+        }
+    }
+
+    async function getResultParamValues(resultId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('result_param_values')
+            .select('*, model_param_values(id, value, param_id, model_params(id, name))')
+            .eq('result_id', resultId);
+        if (error) throw error;
+        return data;
+    }
+
+    // ========== AUTH ==========
 
     async function login(email, password) {
         const client = getClient();
@@ -164,6 +339,8 @@ const Api = (() => {
         return data;
     }
 
+    // ========== STATS ==========
+
     async function trackPageView(visitorHash, page, referrer) {
         const client = getClient();
         if (!client) return;
@@ -205,6 +382,8 @@ const Api = (() => {
             daily: dailyList
         };
     }
+
+    // ========== INVITES (RPC) ==========
 
     async function claimInviteCode(code) {
         const client = getClient();
@@ -315,8 +494,13 @@ const Api = (() => {
     }
 
     return {
-        getPromptsByDifficulty, getAllPrompts, getModelsByPrompt, getAllModels,
-        addModel, updateModel, deleteModel, addPrompt, updatePrompt, deletePrompt,
+        getPromptsByDifficulty, getAllPrompts, addPrompt, updatePrompt, deletePrompt,
+        getAllModels, addModel, updateModel, deleteModel,
+        getModelSpaces, getAllModelSpaces, addModelSpace, updateModelSpace, deleteModelSpace,
+        getModelParams, getAllModelParams, addModelParam, updateModelParam, deleteModelParam,
+        addModelParamValue, updateModelParamValue, deleteModelParamValue,
+        getResultsByPrompt, getAllResults, addResult, updateResult, deleteResult,
+        setResultParamValues, getResultParamValues,
         login, logout, getSession, isAdmin, reinit, getClient,
         telegramAuth, setSession,
         trackPageView, getStats,

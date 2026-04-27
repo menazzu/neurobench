@@ -69,7 +69,8 @@
         <div class="flex">
             <aside class="w-56 min-h-[calc(100vh-56px)] border-r border-border p-4 flex flex-col gap-2">
                 <button class="admin-nav-btn active" data-section="prompts">Промпты</button>
-                <button class="admin-nav-btn" data-section="models">Модели</button>
+                <button class="admin-nav-btn" data-section="models">Настройки моделей</button>
+                <button class="admin-nav-btn" data-section="results">Результаты</button>
                 <button class="admin-nav-btn" data-section="stats">Статистика</button>
                 <button class="admin-nav-btn" data-section="invites">Инвайты</button>
                 <button class="admin-nav-btn" data-section="users">Пользователи</button>
@@ -92,16 +93,29 @@
 
                 <section id="section-models" class="admin-section hidden">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="font-title text-xl uppercase tracking-widest text-shiny">Модели</h2>
-                        <button id="add-model-btn" class="text-[10px] uppercase tracking-widest border border-border px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors">+ Добавить</button>
+                        <h2 class="font-title text-xl uppercase tracking-widest text-shiny">Настройки моделей</h2>
+                        <button id="add-model-btn" class="text-[10px] uppercase tracking-widest border border-border px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors">+ Новая модель</button>
                     </div>
-                    <div class="flex gap-2 mb-4">
-                        <label class="text-xs uppercase tracking-widest opacity-30 mr-2 self-center">Промпт:</label>
-                        <select id="models-prompt-filter" class="bg-surface border border-border px-3 py-2 text-xs text-white outline-none focus:border-white/50 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-6">Модель — глобальный справочник. Здесь настраиваются пространства (где тестируется) и параметры (с какими настройками). Сами результаты добавляются во вкладке «Результаты».</p>
+                    <div id="models-list" class="flex flex-col gap-4"></div>
+                </section>
+
+                <section id="section-results" class="admin-section hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="font-title text-xl uppercase tracking-widest text-shiny">Результаты</h2>
+                        <button id="add-result-btn" class="text-[10px] uppercase tracking-widest border border-border px-6 py-2.5 rounded-full hover:bg-white/10 transition-colors">+ Добавить</button>
+                    </div>
+                    <div class="flex gap-4 mb-4 flex-wrap">
+                        <label class="text-xs uppercase tracking-widest opacity-30 self-center">Промпт:</label>
+                        <select id="results-prompt-filter" class="bg-surface border border-border px-3 py-2 text-xs text-white outline-none focus:border-white/50 rounded-xl">
+                            <option value="all">Все</option>
+                        </select>
+                        <label class="text-xs uppercase tracking-widest opacity-30 self-center">Модель:</label>
+                        <select id="results-model-filter" class="bg-surface border border-border px-3 py-2 text-xs text-white outline-none focus:border-white/50 rounded-xl">
                             <option value="all">Все</option>
                         </select>
                     </div>
-                    <div id="models-list" class="flex flex-col gap-3"></div>
+                    <div id="results-list" class="flex flex-col gap-3"></div>
                 </section>
 
                 <section id="section-stats" class="admin-section hidden">
