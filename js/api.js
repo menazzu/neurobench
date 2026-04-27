@@ -202,7 +202,7 @@ const Api = (() => {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
         const { data, error } = await client.from('results')
-            .select('*, models(id, name, author), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
+            .select('*, models(id, name), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
             .eq('prompt_id', promptId)
             .order('overall', { ascending: false });
         if (error) throw error;
@@ -213,7 +213,7 @@ const Api = (() => {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
         const { data, error } = await client.from('results')
-            .select('*, models(id, name, author), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
+            .select('*, models(id, name), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
             .order('prompt_id')
             .order('overall', { ascending: false });
         if (error) throw error;
