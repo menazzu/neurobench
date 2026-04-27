@@ -202,19 +202,16 @@ LEFT JOIN model_spaces ms ON ms.model_id = mn.id AND ms.name = v->>'label';
 -- STEP 4: Swap tables — rename old, promote new
 -- ==========================================
 
--- 4a. Drop identity from old models.id so we can freely rename the sequence
+-- 4a. Drop identity from old models.id (also drops its internal sequence)
 ALTER TABLE models ALTER COLUMN id DROP IDENTITY IF EXISTS;
 
--- 4b. Rename old models table (keep as backup)
+-- 4b. Rename old models table (keep as backup, no auto-increment needed)
 ALTER TABLE models RENAME TO models_old;
 
--- 4c. Rename old sequence out of the way
-ALTER SEQUENCE models_id_seq RENAME TO models_old_id_seq;
-
--- 4d. Rename models_new → models (now the canonical table)
+-- 4c. Rename models_new → models
 ALTER TABLE models_new RENAME TO models;
 
--- 4e. Rename the new sequence to the canonical name
+-- 4d. Rename the new sequence and wire it up
 ALTER SEQUENCE models_new_id_seq RENAME TO models_id_seq;
 ALTER TABLE models ALTER COLUMN id SET DEFAULT nextval('models_id_seq');
 ALTER SEQUENCE models_id_seq OWNED BY models.id;
@@ -233,3 +230,17 @@ CREATE INDEX idx_results_overall ON results(overall DESC);
 CREATE INDEX idx_results_prompt_model ON results(prompt_id, model_id);
 CREATE INDEX idx_result_param_values_result_id ON result_param_values(result_id);
 CREATE INDEX idx_result_param_values_param_value_id ON result_param_values(param_value_id);
+
+-- ==========================================
+-- STEP 6: Ensure admin_users has a SELECT policy
+-- ==========================================
+
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "admin_users_self_read" ON admin_users
+    FOR SELECT USING (user_id = auth.uid());
+
+-- ==========================================
+-- STEP 7: Reload PostgREST schema cache
+-- ==========================================
+
+NOTIFY pgrst, 'reload schema';

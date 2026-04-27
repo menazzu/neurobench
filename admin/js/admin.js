@@ -365,7 +365,7 @@ const AdminApp = (() => {
     function renderModelParamsModal(model, params) {
         const paramsHtml = params.length > 0 ? params.map(p => {
             const values = p.model_param_values || [];
-            const valuesStr = values.map(v => `
+            const valuesStr = values.length > 0 ? values.map(v => `
                 <div class="flex items-center gap-1 bg-surface border border-border px-2 py-1 rounded-lg">
                     <span class="text-xs text-gray-300">${escapeHtml(v.value)}</span>
                     <button type="button" class="text-red-400/60 hover:text-red-400 text-[9px] ml-1" onclick="AdminApp.deleteParamValue(${v.id}, ${model.id}, ${p.id})">×</button>
