@@ -15,6 +15,21 @@ const Api = (() => {
         getClient();
     }
 
+    function reinitAdmin() {
+        sb = null;
+        const url = window.SUPABASE_URL || '';
+        const key = window.SUPABASE_ANON_KEY || '';
+        if (typeof supabase === 'undefined' || !url || !key) return;
+        sb = supabase.createClient(url, key, {
+            auth: {
+                storageKey: 'neurobench-admin-auth',
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: false
+            }
+        });
+    }
+
     // ========== PROMPTS ==========
 
     async function getPromptsByDifficulty(difficulty) {
@@ -751,7 +766,7 @@ const Api = (() => {
         addModelParamValue, updateModelParamValue, deleteModelParamValue,
         getResultsByPrompt, getAllResults, addResult, updateResult, deleteResult,
         setResultParamValues, getResultParamValues,
-        login, logout, getSession, isAdmin, isModeratorCheck, reinit, getClient,
+        login, logout, getSession, isAdmin, isModeratorCheck, reinit, reinitAdmin, getClient,
         telegramAuth, setSession,
         trackPageView, getStats,
         claimInviteCode, generateInviteCode, getUserInviteStatus, getUserDisplayName,

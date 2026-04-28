@@ -25,7 +25,7 @@ const AdminApp = (() => {
 
     async function checkAuth() {
         if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) { showAuth(); return; }
-        Api.reinit();
+        Api.reinitAdmin();
         const session = await Api.getSession();
         if (session) {
             const admin = await Api.isAdmin();
@@ -955,12 +955,13 @@ const AdminApp = (() => {
             const displayName = name
                 ? [name.telegram_first_name, name.telegram_last_name].filter(Boolean).join(' ') || name.telegram_username || '—'
                 : '—';
+            const tgLabel = m.telegram_username ? `@${escapeHtml(m.telegram_username)}` : `ID: ${escapeHtml(m.telegram_id || '').slice(0, 10)}...`;
             const assignedAt = m.created_at ? new Date(m.created_at).toLocaleDateString('ru') : '—';
             return `
                 <div class="admin-prompt-card flex justify-between items-start gap-4">
                     <div class="flex-1">
                         <span class="text-gray-200 font-bold">${escapeHtml(displayName)}</span>
-                        <span class="text-yellow-400/60 ml-2 text-xs">@${escapeHtml(m.telegram_username)}</span>
+                        <span class="text-yellow-400/60 ml-2 text-xs">${tgLabel}</span>
                         <span class="text-xs text-gray-500 block mt-1">ID: ${m.user_id ? m.user_id.slice(0, 8) + '...' : '—'} | Назначен: ${assignedAt}</span>
                     </div>
                     <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.removeModerator('${m.user_id}')">Снять</button>
@@ -974,19 +975,20 @@ const AdminApp = (() => {
         if (!container) return;
         const modUserIds = new Set(moderatorsData.map(m => m.user_id));
         const candidates = profilesData.filter(p =>
-            p.is_verified && p.telegram_username && !modUserIds.has(p.user_id)
+            p.is_verified && p.telegram_id && !modUserIds.has(p.user_id)
         );
         if (candidates.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет подходящих пользователей (нужен верифицированный аккаунт с Telegram username)</p>';
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет подходящих пользователей (нужен верифицированный аккаунт с Telegram)</p>';
             return;
         }
         container.innerHTML = candidates.map(p => {
-            const name = [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ') || p.telegram_username;
+            const name = [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ') || p.telegram_username || 'Без имени';
+            const tgLabel = p.telegram_username ? `@${escapeHtml(p.telegram_username)}` : '';
             return `
                 <div class="admin-prompt-card flex justify-between items-center gap-4">
                     <div>
                         <span class="text-gray-200 font-bold">${escapeHtml(name)}</span>
-                        <span class="text-gray-400 ml-2 text-xs">@${escapeHtml(p.telegram_username)}</span>
+                        ${tgLabel ? `<span class="text-gray-400 ml-2 text-xs">${tgLabel}</span>` : ''}
                     </div>
                     <button class="text-yellow-400/60 hover:text-yellow-400 transition-colors text-xs" onclick="AdminApp.assignModerator('${p.user_id}')">Назначить</button>
                 </div>
@@ -997,7 +999,7 @@ const AdminApp = (() => {
     async function assignModerator(userId) {
         try {
             const r = await Api.adminAssignModerator(userId);
-            if (!r) { alert('Не удалось назначить. У пользователя может не быть Telegram username.'); return; }
+            if (!r) { alert('Не удалось назначить. У пользователя может не быть привязанного Telegram.'); return; }
             await loadModerators();
             renderProfilesList();
         } catch (err) { alert('Ошибка: ' + err.message); }
@@ -1049,6 +1051,8 @@ const AdminApp = (() => {
     function init() {
         window.SUPABASE_URL = window.SUPABASE_URL || '';
         window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '';
+
+        Api.reinitAdmin();
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();

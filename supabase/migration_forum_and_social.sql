@@ -65,7 +65,8 @@ ALTER TABLE forum_posts ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS moderators (
     id SERIAL PRIMARY KEY,
     user_id UUID UNIQUE NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-    telegram_username TEXT NOT NULL,
+    telegram_id TEXT NOT NULL,
+    telegram_username TEXT,
     assigned_by UUID,
     created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -203,6 +204,7 @@ CREATE INDEX idx_forum_threads_last_post ON forum_threads(last_post_at DESC NULL
 CREATE INDEX idx_forum_posts_thread_created ON forum_posts(thread_id, created_at ASC) WHERE is_deleted = false;
 CREATE INDEX idx_forum_posts_author ON forum_posts(author_id);
 CREATE INDEX idx_moderators_user ON moderators(user_id);
+CREATE INDEX idx_moderators_telegram_id ON moderators(telegram_id);
 CREATE INDEX idx_mod_actions_user_active ON user_mod_actions(user_id, action_type, is_active) WHERE is_active = true;
 
 -- ==========================================
@@ -762,17 +764,18 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE v_tg_id TEXT;
 DECLARE v_tg_username TEXT;
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()) THEN
         RETURN false;
     END IF;
-    SELECT telegram_username INTO v_tg_username FROM profiles WHERE user_id = p_user_id;
-    IF v_tg_username IS NULL THEN
-        RAISE EXCEPTION 'User has no Telegram username';
+    SELECT telegram_id, telegram_username INTO v_tg_id, v_tg_username FROM profiles WHERE user_id = p_user_id;
+    IF v_tg_id IS NULL THEN
+        RAISE EXCEPTION 'User has no Telegram account';
     END IF;
-    INSERT INTO moderators (user_id, telegram_username, assigned_by)
-    VALUES (p_user_id, v_tg_username, auth.uid())
+    INSERT INTO moderators (user_id, telegram_id, telegram_username, assigned_by)
+    VALUES (p_user_id, v_tg_id, v_tg_username, auth.uid())
     ON CONFLICT (user_id) DO NOTHING;
     RETURN FOUND;
 END;
@@ -805,6 +808,7 @@ CREATE OR REPLACE FUNCTION public.admin_get_moderators()
 RETURNS TABLE(
     id INTEGER,
     user_id UUID,
+    telegram_id TEXT,
     telegram_username TEXT,
     assigned_by UUID,
     created_at TIMESTAMPTZ,
@@ -819,7 +823,7 @@ BEGIN
         RETURN;
     END IF;
     RETURN QUERY
-    SELECT m.id, m.user_id, m.telegram_username, m.assigned_by, m.created_at,
+    SELECT m.id, m.user_id, m.telegram_id, m.telegram_username, m.assigned_by, m.created_at,
            COALESCE(p.email, '') AS assigner_email
     FROM moderators m
     LEFT JOIN profiles p ON p.user_id = m.assigned_by
