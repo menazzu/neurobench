@@ -1002,29 +1002,14 @@ END;
 $$;
 
 -- ==========================================
--- STEP 34: Redefine admin_get_profiles with explicit columns
--- (SETOF profiles may miss new columns due to PostgREST schema cache)
+-- STEP 34: Fix admin_get_profiles — reload schema cache so SETOF profiles includes telegram_id
 -- ==========================================
 
+-- Restore original simple definition (SETOF profiles returns ALL columns automatically)
 DROP FUNCTION IF EXISTS public.admin_get_profiles();
 
 CREATE OR REPLACE FUNCTION public.admin_get_profiles()
-RETURNS TABLE(
-    user_id UUID,
-    email TEXT,
-    is_verified BOOLEAN,
-    pending_invite_code TEXT,
-    used_invite_code_id UUID,
-    has_generated_invite BOOLEAN,
-    generated_invite_code_id UUID,
-    created_at TIMESTAMPTZ,
-    telegram_id TEXT,
-    telegram_username TEXT,
-    telegram_first_name TEXT,
-    telegram_last_name TEXT,
-    telegram_photo_url TEXT,
-    bio TEXT
-)
+RETURNS SETOF profiles
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -1033,12 +1018,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()) THEN
         RETURN;
     END IF;
-    RETURN QUERY SELECT
-        p.user_id, p.email, p.is_verified, p.pending_invite_code,
-        p.used_invite_code_id, p.has_generated_invite, p.generated_invite_code_id,
-        p.created_at, p.telegram_id, p.telegram_username,
-        p.telegram_first_name, p.telegram_last_name, p.telegram_photo_url, p.bio
-    FROM profiles p ORDER BY p.created_at DESC;
+    RETURN QUERY SELECT * FROM profiles ORDER BY created_at DESC;
 END;
 $$;
 
