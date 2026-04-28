@@ -65,7 +65,7 @@ ALTER TABLE forum_posts ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS moderators (
     id SERIAL PRIMARY KEY,
     user_id UUID UNIQUE NOT NULL REFERENCES profiles(user_id) ON DELETE CASCADE,
-    telegram_id TEXT NOT NULL,
+    telegram_id TEXT,
     telegram_username TEXT,
     assigned_by UUID,
     created_at TIMESTAMPTZ DEFAULT now()
@@ -770,10 +770,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM admin_users WHERE user_id = auth.uid()) THEN
         RETURN false;
     END IF;
-    SELECT telegram_id, telegram_username INTO v_tg_id, v_tg_username FROM profiles WHERE user_id = p_user_id;
-    IF v_tg_id IS NULL THEN
-        RAISE EXCEPTION 'User has no Telegram account';
+    IF NOT EXISTS (SELECT 1 FROM profiles WHERE user_id = p_user_id) THEN
+        RAISE EXCEPTION 'User profile not found';
     END IF;
+    SELECT telegram_id, telegram_username INTO v_tg_id, v_tg_username FROM profiles WHERE user_id = p_user_id;
     INSERT INTO moderators (user_id, telegram_id, telegram_username, assigned_by)
     VALUES (p_user_id, v_tg_id, v_tg_username, auth.uid())
     ON CONFLICT (user_id) DO NOTHING;

@@ -975,10 +975,10 @@ const AdminApp = (() => {
         if (!container) return;
         const modUserIds = new Set(moderatorsData.map(m => m.user_id));
         const candidates = profilesData.filter(p =>
-            p.is_verified && p.telegram_id && !modUserIds.has(p.user_id)
+            p.is_verified && !modUserIds.has(p.user_id)
         );
         if (candidates.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет подходящих пользователей (нужен верифицированный аккаунт с Telegram)</p>';
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет подходящих пользователей (нужен верифицированный аккаунт)</p>';
             return;
         }
         container.innerHTML = candidates.map(p => {
@@ -999,7 +999,7 @@ const AdminApp = (() => {
     async function assignModerator(userId) {
         try {
             const r = await Api.adminAssignModerator(userId);
-            if (!r) { alert('Не удалось назначить. У пользователя может не быть привязанного Telegram.'); return; }
+            if (!r) { alert('Не удалось назначить модератором'); return; }
             await loadModerators();
             renderProfilesList();
         } catch (err) { alert('Ошибка: ' + err.message); }
