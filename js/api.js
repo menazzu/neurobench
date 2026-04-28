@@ -493,6 +493,256 @@ const Api = (() => {
         return result;
     }
 
+    // ========== FORUM ==========
+
+    async function getForumCategories() {
+        const client = getClient();
+        if (!client) return [];
+        const { data, error } = await client.from('forum_categories').select('*').order('sort_order');
+        if (error) throw error;
+        return data || [];
+    }
+
+    async function getForumThreads(categoryId, limit, offset) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('get_forum_threads', {
+            p_category_id: categoryId || null,
+            p_limit: limit || 20,
+            p_offset: offset || 0
+        });
+        if (error) throw error;
+        return data || [];
+    }
+
+    async function getForumThreadsCount(categoryId) {
+        const client = getClient();
+        if (!client) return 0;
+        const { data, error } = await client.rpc('get_forum_threads_count', {
+            p_category_id: categoryId || null
+        });
+        if (error) throw error;
+        return data || 0;
+    }
+
+    async function getForumThreadPosts(threadId, limit, offset) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('get_forum_thread_posts', {
+            p_thread_id: threadId,
+            p_limit: limit || 25,
+            p_offset: offset || 0
+        });
+        if (error) throw error;
+        return data || [];
+    }
+
+    async function getForumThreadPostsCount(threadId) {
+        const client = getClient();
+        if (!client) return 0;
+        const { data, error } = await client.rpc('get_forum_thread_posts_count', {
+            p_thread_id: threadId
+        });
+        if (error) throw error;
+        return data || 0;
+    }
+
+    async function getForumThread(threadId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client
+            .from('forum_threads')
+            .select('*')
+            .eq('id', threadId)
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    async function createForumThread(categoryId, title, content) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('create_forum_thread', {
+            p_category_id: categoryId,
+            p_title: title,
+            p_content: content
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function createForumPost(threadId, content) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('create_forum_post', {
+            p_thread_id: threadId,
+            p_content: content
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function updateForumPost(postId, content) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('update_forum_post', {
+            p_post_id: postId,
+            p_content: content
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function updateForumThread(threadId, title, content) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('update_forum_thread', {
+            p_thread_id: threadId,
+            p_title: title,
+            p_content: content
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    // ========== MODERATION ==========
+
+    async function isModeratorCheck() {
+        const client = getClient();
+        if (!client) return false;
+        const { data, error } = await client.rpc('is_moderator');
+        if (error) return false;
+        return !!data;
+    }
+
+    async function modPinThread(threadId, pin) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_pin_thread', {
+            p_thread_id: threadId, p_pin: pin
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modLockThread(threadId, lock) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_lock_thread', {
+            p_thread_id: threadId, p_lock: lock
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modDeleteThread(threadId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_delete_thread', {
+            p_thread_id: threadId
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modDeletePost(postId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_delete_post', {
+            p_post_id: postId
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modBanUser(userId, reason, expiresAt) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_ban_user', {
+            p_user_id: userId, p_reason: reason || null, p_expires_at: expiresAt || null
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modMuteUser(userId, reason, expiresAt) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_mute_user', {
+            p_user_id: userId, p_reason: reason || null, p_expires_at: expiresAt || null
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modUnbanUser(userId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_unban_user', { p_user_id: userId });
+        if (error) throw error;
+        return data;
+    }
+
+    async function modUnmuteUser(userId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('mod_unmute_user', { p_user_id: userId });
+        if (error) throw error;
+        return data;
+    }
+
+    async function getUserModActions(userId) {
+        const client = getClient();
+        if (!client) return [];
+        const { data, error } = await client.rpc('get_user_mod_actions', { p_user_id: userId });
+        if (error) throw error;
+        return data || [];
+    }
+
+    // ========== PROFILE ==========
+
+    async function getPublicProfile(userId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('get_public_profile', { p_user_id: userId });
+        if (error) throw error;
+        return data && data[0] ? data[0] : null;
+    }
+
+    async function updateProfileBio(bio) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('update_profile_bio', { p_bio: bio || '' });
+        if (error) throw error;
+        return data;
+    }
+
+    // ========== ADMIN MODERATOR ==========
+
+    async function adminAssignModerator(userId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_assign_moderator', { p_user_id: userId });
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminRemoveModerator(userId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_remove_moderator', { p_user_id: userId });
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminGetModerators() {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.rpc('admin_get_moderators');
+        if (error) throw error;
+        return data || [];
+    }
+
     return {
         getPromptsByDifficulty, getAllPrompts, addPrompt, updatePrompt, deletePrompt,
         getAllModels, addModel, updateModel, deleteModel,
@@ -501,11 +751,18 @@ const Api = (() => {
         addModelParamValue, updateModelParamValue, deleteModelParamValue,
         getResultsByPrompt, getAllResults, addResult, updateResult, deleteResult,
         setResultParamValues, getResultParamValues,
-        login, logout, getSession, isAdmin, reinit, getClient,
+        login, logout, getSession, isAdmin, isModeratorCheck, reinit, getClient,
         telegramAuth, setSession,
         trackPageView, getStats,
         claimInviteCode, generateInviteCode, getUserInviteStatus, getUserDisplayName,
         adminGetInviteCodes, adminGenerateInviteCode, adminDeleteInviteCode, adminGetProfiles,
-        adminResetUserInviteLimit, adminResetAllInviteLimits, adminDeleteUser
+        adminResetUserInviteLimit, adminResetAllInviteLimits, adminDeleteUser,
+        getForumCategories, getForumThreads, getForumThreadsCount,
+        getForumThreadPosts, getForumThreadPostsCount, getForumThread,
+        createForumThread, createForumPost, updateForumPost, updateForumThread,
+        modPinThread, modLockThread, modDeleteThread, modDeletePost,
+        modBanUser, modMuteUser, modUnbanUser, modUnmuteUser,
+        getUserModActions, getPublicProfile, updateProfileBio,
+        adminAssignModerator, adminRemoveModerator, adminGetModerators
     };
 })();

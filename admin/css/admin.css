@@ -116,3 +116,18 @@ select option {
     color: #fff;
     border-color: rgba(255, 255, 255, 0.4);
 }
+
+.admin-mod-badge {
+    display: inline-block;
+    font-family: 'Geist Mono', monospace;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    background: rgba(255,180,0,0.15);
+    color: rgba(255,200,60,0.9);
+    border: 1px solid rgba(255,180,0,0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+}

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroBench | Форум</title>
+    <meta name="description" content="Форум сообщества NeuroBench — обсуждение ИИ, генерации и бенчмарков.">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        black: '#050505',
+                        surface: '#0c0c0c',
+                        border: '#161616',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"Geist Mono"', 'monospace'],
+                        title: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <link rel="icon" type="image/png" href="logo2.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-black text-white antialiased min-h-screen font-mono">
+
+    <nav class="fixed top-8 w-full z-[100] px-4 md:px-6">
+        <div class="max-w-4xl mx-auto nav-pill flex justify-between items-center p-2">
+            <div class="flex items-center gap-3 pl-4">
+                <a href="index.html">
+                    <img src="logo.png" alt="NeuroBench" class="w-8 h-8 rounded-lg object-contain">
+                </a>
+                <a href="index.html" class="font-bold tracking-tighter text-lg uppercase hover:opacity-70 transition-opacity">NeuroBench</a>
+            </div>
+            <div class="hidden md:flex items-center gap-8 -ml-4">
+                <a href="index.html" class="nav-link text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity">Главная</a>
+                <a href="index.html#leaderboard" class="nav-link text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity">Лидерборд</a>
+                <a href="forum.html" class="nav-link text-[10px] uppercase tracking-[0.2em] font-bold opacity-100 transition-opacity">Форум</a>
+            </div>
+            <div class="flex items-center gap-2">
+                <div id="nav-user-menu" class="hidden relative">
+                    <button id="nav-user-btn" class="flex items-center justify-center w-10 h-10 opacity-40 hover:opacity-100 transition-opacity" aria-label="Аккаунт">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </button>
+                    <div id="nav-user-dropdown" class="hidden absolute right-0 top-12 w-56 matte-card p-4 z-[200]">
+                        <p id="nav-user-display" class="text-xs opacity-30 mb-3 truncate"></p>
+                        <a href="profile.html" class="block text-[10px] uppercase tracking-widest text-center border border-border py-2 hover:bg-white/10 transition-colors rounded-xl mb-2">Профиль</a>
+                        <a href="register.html" class="block text-[10px] uppercase tracking-widest text-center border border-border py-2 hover:bg-white/10 transition-colors rounded-xl mb-2">Аккаунт</a>
+                        <button id="nav-user-logout" class="w-full text-[10px] uppercase tracking-widest border border-border py-2 hover:bg-white/10 transition-colors rounded-xl">Выйти</button>
+                    </div>
+                </div>
+                <a href="register.html" id="nav-auth-link" class="nav-link text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 hover:opacity-100 transition-opacity flex items-center gap-1.5">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                    Войти
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="forum-main" class="max-w-4xl mx-auto px-4 md:px-6 pt-32 pb-20 relative z-10">
+        <div class="forum-loading">Загрузка...</div>
+    </main>
+
+    <div id="forum-modal-overlay" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+        <div id="forum-modal" class="w-full max-w-lg mx-4 matte-card p-8 custom-scrollbar max-h-[85vh] overflow-y-auto"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/forum.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            Api.reinit();
+            const session = await Api.getSession();
+            const authLink = document.getElementById('nav-auth-link');
+            const userMenu = document.getElementById('nav-user-menu');
+            if (session && userMenu) {
+                if (authLink) authLink.classList.add('hidden');
+                userMenu.classList.remove('hidden');
+                try {
+                    const info = await Api.getUserDisplayName();
+                    if (info) {
+                        const displayEl = document.getElementById('nav-user-display');
+                        if (displayEl) {
+                            const parts = [info.telegram_first_name, info.telegram_last_name].filter(Boolean);
+                            displayEl.textContent = parts.length > 0 ? parts.join(' ') : (info.telegram_username || info.display_name);
+                        }
+                    }
+                } catch {}
+            }
+
+            const userBtn = document.getElementById('nav-user-btn');
+            if (userBtn) {
+                userBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const dd = document.getElementById('nav-user-dropdown');
+                    if (dd) dd.classList.toggle('hidden');
+                });
+            }
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#nav-user-menu')) {
+                    const dd = document.getElementById('nav-user-dropdown');
+                    if (dd) dd.classList.add('hidden');
+                }
+            });
+            const logoutBtn = document.getElementById('nav-user-logout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async () => {
+                    await Api.logout();
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -53,7 +53,7 @@ const AdminApp = (() => {
         loadResults();
         loadStats();
         loadInvites();
-        loadProfiles();
+        loadModerators().then(() => loadProfiles());
     }
 
     function escapeHtml(str) {
@@ -859,15 +859,17 @@ const AdminApp = (() => {
         const container = document.getElementById('users-list');
         if (!container) return;
         if (profilesData.length === 0) { container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет пользователей</p>'; return; }
+        const modUserIds = new Set(moderatorsData.map(m => m.user_id));
         container.innerHTML = profilesData.map(p => {
             const name = p.telegram_first_name || p.telegram_last_name ? [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ') : (p.telegram_username || '');
             const username = p.telegram_username ? '@' + p.telegram_username : '';
             const verified = p.is_verified ? '<span class="ml-2 text-xs text-green-400/60">Верифицирован</span>' : '<span class="ml-2 text-xs text-red-400/60">Не верифицирован</span>';
+            const modLabel = modUserIds.has(p.user_id) ? '<span class="admin-mod-badge ml-2">MOD</span>' : '';
             const inviteColor = p.has_generated_invite ? 'text-yellow-400/60' : 'text-green-400/60';
             return `
             <div class="admin-prompt-card flex justify-between items-start gap-4">
                 <div class="flex-1">
-                    <span class="text-gray-200 font-bold">${escapeHtml(name)}</span>${username ? `<span class="text-gray-400 ml-2 text-xs">${escapeHtml(username)}</span>` : ''}${verified}
+                    <span class="text-gray-200 font-bold">${escapeHtml(name)}</span>${username ? `<span class="text-gray-400 ml-2 text-xs">${escapeHtml(username)}</span>` : ''}${verified}${modLabel}
                     <span class="text-xs text-gray-500 block mt-1">Email: ${escapeHtml(p.email || '—')} | ID: ${p.user_id ? p.user_id.slice(0, 8) + '...' : '—'}</span>
                 </div>
                 <div class="flex-shrink-0 flex gap-2">
@@ -929,6 +931,86 @@ const AdminApp = (() => {
         const label = profile ? (profile.telegram_username ? '@' + profile.telegram_username : (profile.email || userId.slice(0, 8))) : userId.slice(0, 8);
         if (!confirm(`Удалить ${label}?`)) return;
         try { await Api.adminDeleteUser(userId); await loadProfiles(); } catch (err) { alert('Ошибка: ' + err.message); }
+    }
+
+    // ========== MODERATORS ==========
+
+    let moderatorsData = [];
+
+    async function loadModerators() {
+        try { moderatorsData = await Api.adminGetModerators(); } catch { moderatorsData = []; }
+        renderModeratorsList();
+        renderModeratorCandidates();
+    }
+
+    function renderModeratorsList() {
+        const container = document.getElementById('moderators-list');
+        if (!container) return;
+        if (moderatorsData.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет модераторов</p>';
+            return;
+        }
+        container.innerHTML = moderatorsData.map(m => {
+            const name = profilesData.find(p => p.user_id === m.user_id);
+            const displayName = name
+                ? [name.telegram_first_name, name.telegram_last_name].filter(Boolean).join(' ') || name.telegram_username || '—'
+                : '—';
+            const assignedAt = m.created_at ? new Date(m.created_at).toLocaleDateString('ru') : '—';
+            return `
+                <div class="admin-prompt-card flex justify-between items-start gap-4">
+                    <div class="flex-1">
+                        <span class="text-gray-200 font-bold">${escapeHtml(displayName)}</span>
+                        <span class="text-yellow-400/60 ml-2 text-xs">@${escapeHtml(m.telegram_username)}</span>
+                        <span class="text-xs text-gray-500 block mt-1">ID: ${m.user_id ? m.user_id.slice(0, 8) + '...' : '—'} | Назначен: ${assignedAt}</span>
+                    </div>
+                    <button class="text-red-400/60 hover:text-red-400 transition-colors text-xs" onclick="AdminApp.removeModerator('${m.user_id}')">Снять</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderModeratorCandidates() {
+        const container = document.getElementById('moderator-candidates');
+        if (!container) return;
+        const modUserIds = new Set(moderatorsData.map(m => m.user_id));
+        const candidates = profilesData.filter(p =>
+            p.is_verified && p.telegram_username && !modUserIds.has(p.user_id)
+        );
+        if (candidates.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-xs uppercase tracking-widest">Нет подходящих пользователей (нужен верифицированный аккаунт с Telegram username)</p>';
+            return;
+        }
+        container.innerHTML = candidates.map(p => {
+            const name = [p.telegram_first_name, p.telegram_last_name].filter(Boolean).join(' ') || p.telegram_username;
+            return `
+                <div class="admin-prompt-card flex justify-between items-center gap-4">
+                    <div>
+                        <span class="text-gray-200 font-bold">${escapeHtml(name)}</span>
+                        <span class="text-gray-400 ml-2 text-xs">@${escapeHtml(p.telegram_username)}</span>
+                    </div>
+                    <button class="text-yellow-400/60 hover:text-yellow-400 transition-colors text-xs" onclick="AdminApp.assignModerator('${p.user_id}')">Назначить</button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function assignModerator(userId) {
+        try {
+            const r = await Api.adminAssignModerator(userId);
+            if (!r) { alert('Не удалось назначить. У пользователя может не быть Telegram username.'); return; }
+            await loadModerators();
+            renderProfilesList();
+        } catch (err) { alert('Ошибка: ' + err.message); }
+    }
+
+    async function removeModerator(userId) {
+        if (!confirm('Снять права модератора?')) return;
+        try {
+            const r = await Api.adminRemoveModerator(userId);
+            if (!r) { alert('Не удалось снять'); return; }
+            await loadModerators();
+            renderProfilesList();
+        } catch (err) { alert('Ошибка: ' + err.message); }
     }
 
     // ========== STATS ==========
@@ -1043,7 +1125,8 @@ const AdminApp = (() => {
         closeModal: hideModal, deleteInvite, resetInviteLimit, resetAllLimits, deleteUser,
         manageModelSpaces, deleteModelSpaceItem,
         manageModelParams, addParamValue, deleteParamValue, deleteParam,
-        showAddResultForm, editResult, deleteResult
+        showAddResultForm, editResult, deleteResult,
+        assignModerator, removeModerator
     };
 })();
 
