@@ -53,7 +53,7 @@ const AdminApp = (() => {
         loadResults();
         loadStats();
         loadInvites();
-        loadModerators().then(() => loadProfiles());
+        loadProfiles().then(() => loadModerators());
     }
 
     function escapeHtml(str) {

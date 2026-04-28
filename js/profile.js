@@ -4,6 +4,7 @@ const ProfileModule = (() => {
     let profileUserId = null;
     let isOwnProfile = false;
     let editingBio = false;
+    let inviteInfo = null;
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -28,6 +29,7 @@ const ProfileModule = (() => {
             if (session) {
                 userInfo = await Api.getUserDisplayName();
                 if (userInfo) userInfo.user_id = session.user.id;
+                initNavUser();
             }
         } catch { userInfo = null; }
 
@@ -47,6 +49,57 @@ const ProfileModule = (() => {
         }
 
         await loadProfile();
+    }
+
+    function initNavUser() {
+        const authLink = document.getElementById('nav-auth-link');
+        const userMenu = document.getElementById('nav-user-menu');
+        if (!userInfo) return;
+        if (authLink) authLink.classList.add('hidden');
+        if (userMenu) userMenu.classList.remove('hidden');
+
+        const displayEl = document.getElementById('nav-user-display');
+        if (displayEl) {
+            const parts = [userInfo.telegram_first_name, userInfo.telegram_last_name].filter(Boolean);
+            displayEl.textContent = parts.length > 0 ? parts.join(' ') : (userInfo.telegram_username || userInfo.display_name);
+        }
+
+        if (userInfo.telegram_photo_url) {
+            const photoEl = document.getElementById('nav-user-photo');
+            if (photoEl) {
+                const url = userInfo.telegram_photo_url.startsWith('/')
+                    ? 'https://t.me' + userInfo.telegram_photo_url
+                    : userInfo.telegram_photo_url;
+                photoEl.src = url;
+                photoEl.classList.remove('hidden');
+                photoEl.onerror = () => photoEl.classList.add('hidden');
+            }
+        }
+
+        const logoutBtn = document.getElementById('nav-user-logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                await Api.logout();
+                window.location.reload();
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#nav-user-menu')) {
+                const dd = document.getElementById('nav-user-dropdown');
+                if (dd) dd.classList.add('hidden');
+            }
+        });
+
+        const userLink = document.getElementById('nav-user-display-link');
+        if (userLink) {
+            userLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dd = document.getElementById('nav-user-dropdown');
+                if (dd) dd.classList.toggle('hidden');
+            });
+        }
     }
 
     async function loadProfile() {
@@ -93,6 +146,11 @@ const ProfileModule = (() => {
                     : '')
             : '';
 
+        let accountSection = '';
+        if (isOwnProfile && userInfo) {
+            accountSection = renderAccountSection();
+        }
+
         main.innerHTML = `
             <div class="profile-card">
                 <div class="profile-header">
@@ -125,12 +183,122 @@ const ProfileModule = (() => {
                     </div>
                 </div>
             </div>
+            ${accountSection}
             <div class="profile-back">
                 <a href="forum.html" class="forum-cancel-btn">&larr; На форум</a>
             </div>
         `;
 
         attachProfileHandlers();
+        if (isOwnProfile && userInfo) {
+            attachAccountHandlers();
+        }
+    }
+
+    function renderAccountSection() {
+        if (!userInfo) return '';
+
+        let inviteHtml = '';
+        if (userInfo.is_verified) {
+            if (userInfo.has_generated_invite && userInfo.generated_code) {
+                inviteHtml = `
+                    <div class="profile-account-invite-has">
+                        <p class="profile-account-invite-label">Ваш инвайт-код</p>
+                        <p class="profile-account-invite-code" id="account-invite-code">${escapeHtml(userInfo.generated_code)}</p>
+                        ${userInfo.invite_use_count !== undefined && userInfo.invite_use_count !== null
+                            ? `<p class="profile-account-invite-uses">Использован ${userInfo.invite_use_count} раз</p>` : ''}
+                        <div class="profile-account-invite-actions">
+                            <button id="account-copy-code" class="forum-cancel-btn">Скопировать</button>
+                            <button id="account-regen-invite" class="forum-cancel-btn" style="border-color:rgba(255,180,0,0.2);color:rgba(255,200,60,0.6)">Новый код</button>
+                        </div>
+                    </div>`;
+            } else if (userInfo.has_generated_invite && !userInfo.generated_code) {
+                inviteHtml = `
+                    <div class="profile-account-invite-deleted">
+                        <p class="profile-account-invite-label" style="color:rgba(255,100,100,0.6)">Ваш инвайт-код был удалён</p>
+                        <button id="account-regen-invite" class="forum-cancel-btn" style="border-color:rgba(255,180,0,0.2);color:rgba(255,200,60,0.6)">Сгенерировать новый</button>
+                    </div>`;
+            } else {
+                inviteHtml = `
+                    <div class="profile-account-invite-none">
+                        <p class="profile-account-invite-label">Вы можете пригласить одного человека</p>
+                        <button id="account-gen-invite" class="forum-cancel-btn" style="border-color:rgba(100,200,100,0.2);color:rgba(100,200,100,0.6)">Сгенерировать инвайт-код</button>
+                    </div>`;
+            }
+        }
+
+        const verifiedHtml = userInfo.is_verified
+            ? '<span class="profile-account-verified">Верифицирован</span>'
+            : '<span class="profile-account-unverified">Не верифицирован</span>';
+
+        const modHtml = userInfo.is_moderator
+            ? '<span class="forum-mod-badge" style="margin-left:8px">MOD</span>'
+            : '';
+
+        return `
+            <div class="profile-account-card">
+                <h3 class="profile-section-title">Аккаунт</h3>
+                <div class="profile-account-status">
+                    ${verifiedHtml}${modHtml}
+                </div>
+                ${inviteHtml}
+                <div class="profile-account-actions">
+                    <button id="account-logout" class="forum-cancel-btn" style="border-color:rgba(255,60,60,0.15);color:rgba(255,100,100,0.5)">Выйти</button>
+                    <a href="index.html" class="forum-cancel-btn">На главную</a>
+                </div>
+            </div>
+        `;
+    }
+
+    function attachAccountHandlers() {
+        const genBtn = document.getElementById('account-gen-invite');
+        if (genBtn) {
+            genBtn.addEventListener('click', () => doGenerateInvite('account-gen-invite'));
+        }
+
+        const regenBtn = document.getElementById('account-regen-invite');
+        if (regenBtn) {
+            regenBtn.addEventListener('click', () => doGenerateInvite('account-regen-invite'));
+        }
+
+        const copyBtn = document.getElementById('account-copy-code');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const codeEl = document.getElementById('account-invite-code');
+                if (codeEl) navigator.clipboard.writeText(codeEl.textContent);
+            });
+        }
+
+        const logoutBtn = document.getElementById('account-logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                await Api.logout();
+                window.location.href = 'index.html';
+            });
+        }
+    }
+
+    async function doGenerateInvite(btnId) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = 'Генерация...';
+        try {
+            const code = await Api.generateInviteCode();
+            if (!code) throw new Error('Не удалось сгенерировать код');
+            if (userInfo) {
+                userInfo.has_generated_invite = true;
+                userInfo.generated_code = code;
+                userInfo.invite_use_count = 0;
+            }
+            renderProfile();
+        } catch (err) {
+            alert(err.message || 'Ошибка генерации');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     }
 
     function attachProfileHandlers() {
