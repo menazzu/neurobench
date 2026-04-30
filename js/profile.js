@@ -24,6 +24,30 @@ const ProfileModule = (() => {
     async function init() {
         Api.reinit();
 
+        const devRaw = localStorage.getItem('nb_dev_session');
+        if (devRaw) {
+            try {
+                const dev = JSON.parse(devRaw);
+                userInfo = dev;
+                profileUserId = dev.user_id;
+                isOwnProfile = true;
+                profileData = {
+                    telegram_first_name: dev.telegram_first_name || '',
+                    telegram_last_name: dev.telegram_last_name || '',
+                    telegram_username: dev.telegram_username || 'devuser',
+                    telegram_photo_url: dev.telegram_photo_url || '',
+                    bio: dev.bio || 'Dev-аккаунт для локальной разработки',
+                    is_moderator: dev.is_moderator || false,
+                    created_at: '2026-02-19T10:30:00Z',
+                    threads_count: 4,
+                    posts_count: 30
+                };
+                initNavUser();
+                renderProfile();
+                return;
+            } catch {}
+        }
+
         try {
             const session = await Api.getSession();
             if (session) {

@@ -43,19 +43,190 @@ canvas#ascii-canvas {
 .text-shiny {
     background: linear-gradient(90deg, #444 0%, #fff 50%, #444 100%);
     background-size: 200% auto;
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: shine 8s linear infinite;
+}
+
+.podium-card {
+    --podium-rgb: 242, 190, 82;
+    --podium-deep-rgb: 170, 118, 40;
+    --podium-soft: rgba(var(--podium-rgb), 0.16);
+    --podium-border: rgba(var(--podium-rgb), 0.48);
+    border-color: var(--podium-border);
+    box-shadow: inset 0 0 0 1px rgba(var(--podium-rgb), 0.05), 0 0 26px rgba(var(--podium-deep-rgb), 0.09);
+    overflow: hidden;
+}
+
+.podium-gold-card {
+    border-color: transparent;
+    box-shadow:
+        0 0 24px rgba(255, 187, 64, 0.04);
+}
+
+.podium-gold-card:hover {
+    border-color: transparent;
+    box-shadow:
+        0 0 28px rgba(255, 187, 64, 0.12),
+        0 0 80px rgba(255, 184, 52, 0.06);
+}
+
+.podium-silver-card {
+    --podium-rgb: 220, 226, 235;
+    --podium-deep-rgb: 150, 162, 178;
+}
+
+.podium-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 14% 24%, rgba(var(--podium-rgb), 0.08), transparent 28%),
+        linear-gradient(115deg, transparent 0%, rgba(var(--podium-rgb), 0.045) 42%, transparent 58%);
+    background-size: 100% 100%, 220% 100%;
+    opacity: 0.65;
+}
+
+.podium-gold-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1.5px;
+    pointer-events: none;
+    background: linear-gradient(
+        115deg,
+        transparent 0%,
+        transparent 32%,
+        rgba(255, 186, 54, 0.06) 38%,
+        rgba(255, 210, 100, 0.38) 44%,
+        rgba(255, 232, 160, 0.72) 48%,
+        rgba(255, 244, 196, 0.88) 51%,
+        rgba(255, 220, 120, 0.56) 55%,
+        rgba(255, 196, 68, 0.22) 60%,
+        transparent 68%,
+        transparent 100%
+    );
+    background-size: 180% 180%;
+    background-position: 120% 20%;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    animation: podium-border-travel 9s ease-in-out infinite;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    will-change: background-position, opacity;
+}
+
+.podium-gold-card:hover::after {
+    opacity: 1;
+}
+
+.podium-gold-text {
+    background: linear-gradient(90deg, #9b6b1f 0%, #ffd36a 34%, #fff0b8 50%, #d79a2b 68%, #9b6b1f 100%);
+    background-size: 220% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 5.5s linear infinite;
+    text-shadow: 0 0 20px rgba(245, 185, 60, 0.16);
+}
+
+.podium-silver-text {
+    background: linear-gradient(90deg, #818892 0%, #dce2eb 36%, #ffffff 50%, #a7b0bc 68%, #737b86 100%);
+    background-size: 220% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 6s linear infinite;
+    text-shadow: 0 0 20px rgba(210, 220, 235, 0.12);
+}
+
+.podium-gold-meta {
+    color: rgba(255, 226, 150, 0.88);
+    text-shadow: 0 0 12px rgba(242, 190, 82, 0.22);
+}
+
+.podium-gold-param {
+    color: rgba(255, 205, 110, 0.7);
+    text-shadow: 0 0 10px rgba(242, 190, 82, 0.16);
+}
+
+.podium-silver-meta {
+    color: rgba(226, 232, 240, 0.82);
+    text-shadow: 0 0 12px rgba(220, 226, 235, 0.14);
+}
+
+.podium-silver-param {
+    color: rgba(190, 200, 214, 0.68);
+    text-shadow: 0 0 10px rgba(220, 226, 235, 0.1);
+}
+
+.top-rank-crown {
+    display: inline-block;
+    margin-right: 0.45em;
+    -webkit-text-fill-color: #ffd36a;
+    filter: drop-shadow(0 0 6px rgba(255, 196, 78, 0.35));
+}
+
+.podium-card .scores-container .text-gray-400 {
+    color: rgba(255, 218, 140, 0.7);
+    text-shadow: none;
+}
+
+.podium-gold-card .scores-container .text-gray-400 span:first-child {
+    color: rgba(255, 213, 126, 0.82);
+    -webkit-text-fill-color: currentColor;
+    text-shadow: none;
+}
+
+.podium-silver-card .scores-container .text-gray-400 {
+    color: rgba(220, 226, 235, 0.62);
+    text-shadow: none;
+}
+
+.podium-card .scores-container .text-white {
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 0 10px rgba(var(--podium-rgb), 0.1);
+}
+
+.podium-card .scores-container .hatching-fill {
+    box-shadow: 0 0 10px rgba(var(--podium-rgb), 0.16);
+}
+
+.podium-gold-card .scores-container .hatching-fill {
+    background-color: rgba(255, 211, 112, 0.08);
+}
+
+.podium-silver-card .scores-container .hatching-fill {
+    background-color: rgba(220, 226, 235, 0.08);
 }
 
 @keyframes shine {
     to { background-position: 200% center; }
 }
 
+@keyframes podium-border-travel {
+    0%   { background-position: 120% 20%; }
+    35%  { background-position: 55% 55%; }
+    70%  { background-position: 20% 85%; }
+    100% { background-position: 120% 20%; }
+}
+
 .nav-pill {
     background: #0c0c0c;
     border: 1px solid #161616;
     border-radius: 100px;
+    overflow: visible;
+}
+
+.nav-dropdown {
+    background: #0c0c0c;
+    border: 1px solid #161616;
+    border-radius: 12px;
 }
 
 .terminal-header {
@@ -66,6 +237,57 @@ canvas#ascii-canvas {
 .letter {
     display: inline-block;
     opacity: 0;
+}
+
+.ascii-char {
+    display: inline-block;
+    cursor: crosshair;
+    transform-origin: center center;
+    will-change: transform, color, filter;
+    line-height: 1;
+}
+
+/* Typewriter cursor */
+.typewriter-cursor {
+    display: inline-block;
+    animation: blink-cursor 0.7s step-end infinite;
+    color: rgba(255,255,255,0.6);
+    font-weight: 100;
+    margin-left: 1px;
+}
+@keyframes blink-cursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Wave letter animation for section headings */
+.wave-letter {
+    display: inline-block;
+    animation: wave-float 2.5s ease-in-out infinite;
+    opacity: 0;
+    animation-fill-mode: forwards;
+}
+@keyframes wave-float {
+    0% { transform: translateY(0); opacity: 0; }
+    10% { opacity: 1; }
+    30% { transform: translateY(-6px); }
+    50% { transform: translateY(0); }
+    70% { transform: translateY(-3px); }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Scramble text hover glow */
+.scramble-text {
+    transition: text-shadow 0.3s ease;
+}
+.scramble-text:hover {
+    text-shadow: 0 0 12px rgba(255,255,255,0.15);
+}
+
+/* Word tokens in descriptions */
+.word-token {
+    display: inline-block;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 ::-webkit-scrollbar { width: 0px; }
@@ -85,6 +307,30 @@ canvas#ascii-canvas {
         -45deg,
         rgba(255, 255, 255, 0.9) 0px,
         rgba(255, 255, 255, 0.9) 2px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0) 6px
+    );
+}
+
+.podium-card:hover,
+.podium-card {
+    border-color: var(--podium-border);
+}
+
+.podium-gold-card,
+.podium-gold-card:not(:hover) {
+    border-color: transparent !important;
+}
+
+.podium-gold-card:hover {
+    border-color: transparent !important;
+}
+
+.podium-card .scores-container .hatching-fill {
+    background: repeating-linear-gradient(
+        -45deg,
+        rgba(var(--podium-rgb), 0.95) 0px,
+        rgba(var(--podium-rgb), 0.95) 2px,
         rgba(0, 0, 0, 0) 2px,
         rgba(0, 0, 0, 0) 6px
     );
@@ -740,6 +986,7 @@ canvas#ascii-canvas {
     border-radius: 12px;
     transition: border-color 0.3s;
     box-sizing: border-box;
+    appearance: none;
     -webkit-appearance: none;
 }
 .forum-select:focus { border-color: rgba(255,255,255,0.3); }

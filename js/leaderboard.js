@@ -14,6 +14,9 @@ const LeaderboardModule = (() => {
     let searchQuery = '';
     let barObserver = null;
     let pendingTimeouts = [];
+    const glyphPoolCache = new Map();
+    const glyphMetricsCanvas = document.createElement('canvas');
+    const glyphMetricsCtx = glyphMetricsCanvas.getContext('2d');
 
     async function load() {
         showLoading();
@@ -207,15 +210,16 @@ const LeaderboardModule = (() => {
         const keys = ['s_visual', 's_animation', 's_creative', 's_code', 's_detail'];
         CRITERIA.forEach((c, ci) => {
             const score = parseFloat(result[keys[ci]]) || 0;
+            const scoreText = Number.isInteger(score) ? String(score) : score.toFixed(1);
             const pct = (score / MAX_PER) * 100;
             scoresHtml += `
                 <div class="w-full">
                     <div class="flex justify-between text-xs mb-2.5 uppercase tracking-widest text-gray-400">
                         <span>${c}</span>
-                        <span class="text-white font-bold">${score.toFixed(1)} / 10</span>
+                        <span class="text-white font-bold">${scoreText} / 10</span>
                     </div>
                     <div class="h-[18px] w-full bg-black/40 border border-border relative overflow-hidden">
-                        <div class="hatching-fill absolute top-0 left-0 h-full w-0 transition-all duration-[1.5s] cubic-bezier(0.19, 1, 0.22, 1) score-bar" data-ci="${ci}" data-target="${pct}%"></div>
+                        <div class="hatching-fill absolute top-0 left-0 h-full w-0 transition-all duration-[1.8s] cubic-bezier(0.19, 1, 0.22, 1) score-bar" data-ci="${ci}" data-target="${pct}%"></div>
                     </div>
                 </div>
             `;
@@ -292,11 +296,18 @@ const LeaderboardModule = (() => {
 
     function updateTitleCounter() {
         const titleEl = document.getElementById('leaderboard-title');
-        if (!titleEl) return;
-        const testedModelIds = new Set(resultsData.map(r => r.model_id));
-        const tested = testedModelIds.size;
+        if (titleEl) titleEl.textContent = 'Лидерборд';
+        const tested = resultsData.length;
         const total = allModelsCount;
-        titleEl.textContent = `Лидерборд ${tested}/${total}`;
+        document.querySelectorAll('#prompt-filters .top-filter-btn').forEach(btn => {
+            const base = btn.getAttribute('data-base-label') || btn.textContent.replace(/\s*\d+\/\d+$/, '');
+            btn.setAttribute('data-base-label', base);
+            if (btn.classList.contains('active')) {
+                btn.textContent = `${base} ${tested}/${total}`;
+            } else {
+                btn.textContent = base;
+            }
+        });
     }
 
     function renderBenchmarkList() {
@@ -336,13 +347,22 @@ const LeaderboardModule = (() => {
             const authorLine = result.author ? `<span class="text-[10px] text-gray-500 font-mono">by ${escapeHtml(result.author)}</span>` : '';
             const rank = idx + 1;
             const rankDisplay = String(rank).padStart(2, '0');
+            const isTopRank = rank === 1;
+            const isSecondRank = rank === 2;
+            const podiumTone = isTopRank ? 'gold' : isSecondRank ? 'silver' : '';
+            const podiumCardClass = podiumTone ? ` podium-card podium-${podiumTone}-card` : '';
+            const rankClass = podiumTone ? `podium-rank podium-${podiumTone}-text` : 'text-white/30 group-hover:text-white/50';
+            const rankPrefix = isTopRank ? '<span class="top-rank-crown">♛</span>' : '';
+            const nameClass = podiumTone ? ` podium-name podium-${podiumTone}-text` : '';
+            const spaceLabelClass = podiumTone ? `podium-meta podium-${podiumTone}-meta` : 'text-gray-300';
+            const paramLabelClass = podiumTone ? `podium-param podium-${podiumTone}-param` : 'text-purple-400/60';
 
             let labelsHtml = '';
             if (spaceName) {
-                labelsHtml += `<span class="text-[12px] font-bold tracking-[0.15em] text-gray-300 uppercase">${escapeHtml(spaceName)}</span>`;
+                labelsHtml += `<span class="text-[12px] font-bold tracking-[0.15em] ${spaceLabelClass} uppercase">${escapeHtml(spaceName)}</span>`;
             }
             if (paramLabel) {
-                labelsHtml += ` <span class="text-[10px] text-purple-400/60 font-mono">${escapeHtml(paramLabel)}</span>`;
+                labelsHtml += ` <span class="text-[10px] ${paramLabelClass} font-mono">${escapeHtml(paramLabel)}</span>`;
             }
 
             const scoresHtml = renderBars(result);
@@ -350,13 +370,14 @@ const LeaderboardModule = (() => {
             const dateStr = formatDateDisplay(result.test_date);
 
             const card = document.createElement('div');
-            card.className = "matte-card p-4 sm:p-8 border border-border hover:border-white/50 transition-colors duration-300 flex flex-col bg-surface benchmark-card group";
+            card.className = `matte-card p-4 sm:p-8 border border-border hover:border-white/50 transition-colors duration-300 flex flex-col bg-surface benchmark-card group${podiumCardClass}`;
+            card.dataset.animDelay = String(Math.min(idx, 4) * 90);
 
             card.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-0 items-stretch">
                     <div class="w-full lg:w-[28%] flex flex-col justify-center text-center lg:text-left border-b lg:border-b-0 lg:border-r border-border pb-4 sm:pb-6 lg:pb-0 pr-0 lg:pr-8 relative">
-                        <span class="text-[10px] font-mono text-white/30 group-hover:text-white/50 transition-colors tracking-widest mb-1">#${rankDisplay}</span>
-                        <h3 class="font-title text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors">${escapeHtml(modelName)}</h3>
+                        <span class="text-[10px] font-mono ${rankClass} transition-colors tracking-widest mb-1">${rankPrefix}#${rankDisplay}</span>
+                        <h3 class="font-title text-xl sm:text-2xl lg:text-3xl uppercase tracking-wider text-[#F2F2F2] mb-2 group-hover:text-white transition-colors model-name-decode${nameClass}" data-name="${escapeHtml(modelName)}">&nbsp;</h3>
                         <span class="text-[10px] uppercase font-mono text-gray-400 tracking-widest">${dateStr}</span>
                         <div class="mt-2">${labelsHtml} ${authorLine}</div>
                     </div>
@@ -369,12 +390,14 @@ const LeaderboardModule = (() => {
                         </svg>
                         <div class="flex-shrink-0 relative z-30 group/score text-center md:text-left mt-6 sm:mt-8 md:mt-0 md:w-56 pl-0 md:pl-2 pr-0 md:pr-12">
                             <span class="text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.2em] text-gray-400 block mb-2">Общий балл</span>
-                            <span class="font-title text-[48px] sm:text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score" data-raw="${result.overall}">${Math.floor(parseFloat(result.overall) || 0)}</span>
-                            ${svgBlock}
-                            <div class="absolute left-1/2 lg:left-0 -translate-x-1/2 lg:translate-x-0 bottom-full mb-3 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none bg-surface border border-border p-4 text-[10px] font-mono tracking-widest text-gray-400 whitespace-nowrap z-[100] shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-                                Формула вычисления:<br>
-                                <span class="text-white mt-1 block">(Сумма 5) × 1.8 = Max 90</span>
+                            <div class="relative inline-block">
+                                <span class="font-title text-[48px] sm:text-[64px] lg:text-[76px] leading-none text-[#F2F2F2] font-bold overall-score" data-raw="${result.overall}">0</span>
+                                <span class="absolute left-full top-1/2 -translate-y-1/2 ml-4 opacity-0 group-hover/score:opacity-100 transition-opacity duration-300 pointer-events-none text-[9px] font-mono tracking-widest text-white/35 whitespace-nowrap leading-relaxed text-left">
+                                    Формула:<br>
+                                    Сумма ×5 × 1.8 = 90
+                                </span>
                             </div>
+                            ${svgBlock}
                         </div>
                     </div>
                 </div>
@@ -421,12 +444,134 @@ const LeaderboardModule = (() => {
         barObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.querySelectorAll('.hatching-fill').forEach(bar => { bar.style.width = bar.getAttribute('data-target'); });
+                    const delay = parseInt(entry.target.dataset.animDelay || '0', 10);
+                    const timeoutId = setTimeout(() => {
+                        entry.target.querySelectorAll('.hatching-fill').forEach(bar => { bar.style.width = bar.getAttribute('data-target'); });
+                        const nameEl = entry.target.querySelector('.model-name-decode');
+                        if (nameEl && !nameEl._decoded) {
+                            nameEl._decoded = true;
+                            hackerDecode(nameEl, nameEl.dataset.name);
+                        }
+                        const scoreEl = entry.target.querySelector('.overall-score');
+                        if (scoreEl && !scoreEl._counted) {
+                            scoreEl._counted = true;
+                            countUpScore(scoreEl, parseFloat(scoreEl.dataset.raw) || 0);
+                        }
+                    }, delay);
+                    pendingTimeouts.push(timeoutId);
                     barObserver.unobserve(entry.target);
                 }
             });
         }, { threshold: 0.15 });
         document.querySelectorAll('.benchmark-card').forEach(card => barObserver.observe(card));
+    }
+
+    function hackerDecodeClassic(el, target) {
+        const g = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const len = target.length; let rev = 0, tick = 0;
+        el.textContent = target; const h = el.offsetHeight;
+        el.style.height = h + 'px'; el.style.overflow = 'hidden'; el.textContent = '';
+        const iv = setInterval(() => {
+            let o = ''; for (let i = 0; i < len; i++) o += i < rev ? target[i] : target[i] === ' ' ? ' ' : g[Math.floor(Math.random() * g.length)];
+            el.textContent = o; tick++; if (tick % 3 === 0) rev++;
+            if (rev > len) { clearInterval(iv); el.textContent = target; el.style.height = ''; el.style.overflow = ''; }
+        }, 35);
+    }
+
+    function hackerDecode(el, target) {
+        const glyphs = 'ABCDEFGHKNOPRSTUVXYZ023456789';
+        const len = target.length;
+        el.textContent = target;
+        const h = el.offsetHeight;
+        el.style.height = h + 'px';
+        el.style.overflow = 'hidden';
+        el.textContent = '';
+        const rg = () => glyphs[Math.floor(Math.random() * glyphs.length)];
+        const keep = /[\s.\-]/;
+        const dur = 2500;
+        const t0 = performance.now();
+        const frozen = new Uint8Array(len);
+        const glyphState = Array.from({ length: len }, (_, i) => keep.test(target[i]) ? target[i] : rg());
+        const glyphNext = Array.from({ length: len }, () => t0 + 90 + Math.random() * 120);
+        const cs = getComputedStyle(el);
+        glyphMetricsCtx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const glyphPools = Array.from({ length: len }, (_, i) => {
+            if (keep.test(target[i])) return [target[i]];
+            const cacheKey = `${glyphMetricsCtx.font}|${target[i]}`;
+            if (glyphPoolCache.has(cacheKey)) return glyphPoolCache.get(cacheKey);
+            const targetW = glyphMetricsCtx.measureText(target[i]).width;
+            const pool = glyphs.split('')
+                .map(g => ({ g, d: Math.abs(glyphMetricsCtx.measureText(g).width - targetW) }))
+                .sort((a, b) => a.d - b.d)
+                .slice(0, 5)
+                .map(x => x.g);
+            glyphPoolCache.set(cacheKey, pool);
+            return pool;
+        });
+        glyphState.forEach((_, i) => {
+            if (keep.test(target[i])) return;
+            const pool = glyphPools[i];
+            glyphState[i] = pool[Math.floor(Math.random() * pool.length)];
+        });
+        function noise(i, now) {
+            if (now >= glyphNext[i]) {
+                const pool = glyphPools[i];
+                glyphState[i] = pool[Math.floor(Math.random() * pool.length)];
+                glyphNext[i] = now + 100 + Math.random() * 120;
+            }
+            return glyphState[i];
+        }
+        function step(now) {
+            const dt = now - t0;
+            const t = Math.min(dt / dur, 1);
+            let out = '';
+            // Phase weights (smooth crossfade via wide overlapping ranges)
+            const wHint = t < 0.15 ? 0 : t < 0.35 ? (t - 0.15) / 0.2 : t < 0.55 ? 1 : Math.max(0, 1 - (t - 0.55) / 0.2);
+            const sweepT = Math.max(0, (t - 0.3) / 0.7);
+            const sweepEased = 1 - Math.pow(1 - sweepT, 5);
+            const sweepPos = sweepEased * (len + 5);
+            for (let i = 0; i < len; i++) {
+                if (keep.test(target[i])) { out += target[i]; continue; }
+                if (frozen[i]) { out += target[i]; continue; }
+                if (sweepT > 0 && i < sweepPos - 2) {
+                    frozen[i] = 1;
+                    out += target[i];
+                } else if (sweepT > 0 && i < sweepPos + 6) {
+                    const d = i - (sweepPos - 2);
+                    const chance = Math.max(0, 1 - d / 8) * 0.35;
+                    if (Math.random() < chance) { frozen[i] = 1; out += target[i]; }
+                    else out += noise(i, now);
+                } else {
+                    out += noise(i, now);
+                }
+            }
+            if (t >= 1) {
+                el.textContent = target;
+                el.style.height = '';
+                el.style.overflow = '';
+                return;
+            }
+            el.textContent = out;
+            requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    function countUpScore(el, target) {
+        const duration = 1500;
+        const startTime = performance.now();
+        const intTarget = Math.floor(target);
+        function step(now) {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.floor(eased * intTarget);
+            el.textContent = current;
+            if (progress < 1) requestAnimationFrame(step);
+            else el.textContent = intTarget;
+        }
+        el.textContent = '0';
+        requestAnimationFrame(step);
     }
 
     return { load, setSearch(q) { searchQuery = q; renderBenchmarkList(); }, retry() { load(); } };

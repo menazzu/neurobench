@@ -16,9 +16,24 @@ async function trackVisit() {
 async function initUserMenu() {
     try {
         Api.reinit();
-        const session = await Api.getSession();
         const authLink = document.getElementById('nav-auth-link');
         const userMenu = document.getElementById('nav-user-menu');
+
+        const devRaw = localStorage.getItem('nb_dev_session');
+        if (devRaw) {
+            try {
+                const dev = JSON.parse(devRaw);
+                if (authLink) authLink.classList.add('hidden');
+                if (userMenu) {
+                    userMenu.classList.remove('hidden');
+                    const displayEl = document.getElementById('nav-user-display');
+                    if (displayEl) displayEl.textContent = [dev.telegram_first_name, dev.telegram_last_name].filter(Boolean).join(' ') || dev.telegram_username || dev.display_name;
+                }
+                return;
+            } catch {}
+        }
+
+        const session = await Api.getSession();
         if (!session) return;
         if (authLink) authLink.classList.add('hidden');
         if (userMenu) {
@@ -60,7 +75,9 @@ async function initUserMenu() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await LeaderboardModule.load();
+    if (typeof LeaderboardModule !== 'undefined') {
+        await LeaderboardModule.load();
+    }
     trackVisit();
     initUserMenu();
 
@@ -94,20 +111,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             clearTimeout(debounceTimer);
             const val = searchInput.value.trim();
             searchClear.classList.toggle('hidden', !val);
-            debounceTimer = setTimeout(() => { LeaderboardModule.setSearch(val); }, 250);
+            debounceTimer = setTimeout(() => { if (typeof LeaderboardModule !== 'undefined') LeaderboardModule.setSearch(val); }, 250);
         });
     }
     if (searchClear) {
         searchClear.addEventListener('click', () => {
             searchInput.value = '';
             searchClear.classList.add('hidden');
-            LeaderboardModule.setSearch('');
+            if (typeof LeaderboardModule !== 'undefined') LeaderboardModule.setSearch('');
         });
     }
 
     const retryBtn = document.getElementById('error-retry-btn');
     if (retryBtn) {
-        retryBtn.addEventListener('click', () => { LeaderboardModule.retry(); });
+        retryBtn.addEventListener('click', () => { if (typeof LeaderboardModule !== 'undefined') LeaderboardModule.retry(); });
     }
 
     try {

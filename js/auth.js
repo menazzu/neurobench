@@ -119,10 +119,60 @@ const AuthApp = (() => {
     }
 
     async function checkExistingSession() {
+        const devRaw = localStorage.getItem('nb_dev_session');
+        if (devRaw) {
+            try {
+                const devInfo = JSON.parse(devRaw);
+                showView('account');
+                const nameEl = document.getElementById('account-name');
+                if (nameEl) nameEl.textContent = [devInfo.telegram_first_name, devInfo.telegram_last_name].filter(Boolean).join(' ') || devInfo.display_name;
+                const usernameEl = document.getElementById('account-username');
+                if (usernameEl && devInfo.telegram_username) { usernameEl.textContent = '@' + devInfo.telegram_username; usernameEl.classList.remove('hidden'); }
+                document.getElementById('account-verified').classList.remove('hidden');
+                resetInviteState();
+                if (devInfo.generated_code) {
+                    document.getElementById('account-has-invite').classList.remove('hidden');
+                    document.getElementById('account-invite-code').textContent = devInfo.generated_code;
+                } else {
+                    document.getElementById('account-no-invite').classList.remove('hidden');
+                }
+                return;
+            } catch {}
+        }
         const session = await Api.getSession();
         if (session) {
             await showAccountView();
         }
+    }
+
+    function activateDevLogin() {
+        const devInfo = {
+            user_id: 'dev-user-' + Date.now(),
+            telegram_first_name: 'Dev',
+            telegram_last_name: 'User',
+            telegram_username: 'devuser',
+            telegram_photo_url: '',
+            display_name: 'Dev User',
+            is_verified: true,
+            is_banned: false,
+            is_muted: false,
+            is_moderator: false,
+            has_generated_invite: true,
+            generated_code: 'DEV12345',
+            invite_use_count: 0
+        };
+        localStorage.setItem('nb_dev_session', JSON.stringify(devInfo));
+        showView('account');
+        const nameEl = document.getElementById('account-name');
+        if (nameEl) nameEl.textContent = devInfo.telegram_first_name + ' ' + devInfo.telegram_last_name;
+        const usernameEl = document.getElementById('account-username');
+        if (usernameEl) { usernameEl.textContent = '@' + devInfo.telegram_username; usernameEl.classList.remove('hidden'); }
+        document.getElementById('account-verified').classList.remove('hidden');
+        resetInviteState();
+        document.getElementById('account-has-invite').classList.remove('hidden');
+        document.getElementById('account-invite-code').textContent = devInfo.generated_code;
+        const badge = document.getElementById('new-user-badge');
+        if (badge) badge.classList.remove('hidden');
     }
 
     async function doGenerateInvite(btnId) {
@@ -154,6 +204,9 @@ const AuthApp = (() => {
 
         window.onTelegramAuth = handleTelegramAuth;
 
+        const devBtn = document.getElementById('dev-login-btn');
+        if (devBtn) devBtn.addEventListener('click', activateDevLogin);
+
         const inviteInput = document.getElementById('invite-code');
         if (inviteInput) {
             inviteInput.addEventListener('input', () => {
@@ -174,6 +227,7 @@ const AuthApp = (() => {
         });
 
         document.getElementById('account-logout').addEventListener('click', async () => {
+            localStorage.removeItem('nb_dev_session');
             await Api.logout();
             showView('auth');
             document.getElementById('account-verified').classList.add('hidden');

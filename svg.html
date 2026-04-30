@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Bench</title>
+    <script>window.__NB_TITLE__ = 'SVG Bench';</script>
+    <meta name="description" content="NeuroBench — SVG бенчмарк для оценки визуального интеллекта ИИ.">
+    <link rel="icon" type="image/png" href="logo2.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        black: '#050505',
+                        surface: '#0c0c0c',
+                        border: '#161616',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['"Geist Mono"', 'monospace'],
+                        title: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/style.css?v=24">
+    <script src="js/title-scramble.js?v=7" data-title="SVG Bench" defer></script>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <canvas id="ascii-canvas"></canvas>
+
+    <div id="navbar-placeholder"></div>
+    <script src="js/navbar.js"></script>
+
+    <section class="py-32 px-6 max-w-7xl mx-auto relative z-10 text-white font-mono" style="margin-top: 80px;">
+        <h2 class="font-title text-3xl md:text-4xl uppercase tracking-widest mb-12 border-b border-border pb-4 text-center md:text-left text-shiny">Что проверяют SVG?</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface font-mono text-lg text-white/60">[✓]</div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">1.</span> Истинное воображение (Zero Data Contamination)</h3>
+                <p class="text-sm opacity-30 leading-relaxed">Проверка на SE(2) инвариантность (повороты и сдвиги). При повороте все координаты кардинально меняются, исключая возможность «зубрежки». Успех строго доказывает, что модель оперирует внутренним пониманием пространства и топологии объектов, а не просто копирует шаблоны.</p>
+            </div>
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface font-mono text-lg text-white/60">[+]</div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">2.</span> Аудит математической логики</h3>
+                <p class="text-sm opacity-30 leading-relaxed">В отличие от легко прощаемого текста, малейшая ошибка в цифре SVG-координаты мгновенно рушит контур. Генерация графики требует точных алгебраических вычислений, что беспощадно разоблачает поверхностную «иллюзию рассуждения» (pattern matching) современных LLM.</p>
+            </div>
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface font-mono text-lg text-white/60">{◈}</div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">3.</span> Преодоление пиксельных генераторов</h3>
+                <p class="text-sm opacity-30 leading-relaxed">Нейросети вроде Midjourney отлично генерируют текстуры через вероятностные пиксели, но проваливают точный инженерный структурный подсчет. SVG требует строгого, детерминированного планирования связей, узлов и соблюдения точной DOM-иерархии.</p>
+            </div>
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface font-mono text-lg text-white/60">[⚡]</div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">4.</span> Прокачка общего интеллекта (Symbolic Tuning)</h3>
+                <p class="text-sm opacity-30 leading-relaxed">Обучение ИИ на строгих графах и точных координатах парадоксально улучшает логику даже в сферах, не связанных с графикой. Это дает скачкообразный рост метрик на математических бенчмарках (GSM8K) и устраняет слепые пятна бестелесного восприятия ИИ.</p>
+            </div>
+            <div class="matte-card p-10 group hover:border-white/20 transition-all duration-500">
+                <div class="w-10 h-10 border border-white/10 rounded-lg flex items-center justify-center mb-8 bg-surface font-mono text-lg text-white/60">&lt;/&gt;</div>
+                <h3 class="text-lg font-bold uppercase mb-3 text-white"><span class="opacity-30 mr-2">5.</span> Валидация строгого исполняемого кода</h3>
+                <p class="text-sm opacity-30 leading-relaxed">SVG — это XML-разметка с жестким синтаксисом. Успех доказывает способность модели выдавать безупречный структурированный код для UI/UX. Это делает логику «зрения» ИИ полностью прозрачной, интерпретируемой и применимой для автоматизации frontend-разработки.</p>
+            </div>
+            <div class="matte-card p-8 group hover:border-white/20 transition-all duration-500 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity font-mono text-[80px] leading-none text-white select-none">&lt;/&gt;</div>
+                <h3 class="text-xs font-bold uppercase tracking-[0.2em] mb-2 opacity-30">Суть метода</h3>
+                <p class="text-sm opacity-50 uppercase tracking-widest leading-loose">SVG — это мост между текстовой LLM генерацией и физическим конструированием визуального мира.</p>
+            </div>
+        </div>
+    </section>
+
+    <main id="leaderboard" class="max-w-7xl mx-auto px-6 pb-40 relative z-10 text-white font-mono w-full">
+        
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-border pb-6 gap-6">
+            <div class="flex-1">
+                <h2 id="leaderboard-title" class="font-title text-3xl md:text-5xl uppercase tracking-widest text-shiny mb-4">Лидерборд</h2>
+                <a href="https://t.me/benchforme" target="_blank" rel="noopener" class="inline-flex items-center gap-2 mb-5 opacity-30 hover:opacity-100 transition-opacity duration-300 group" style="text-decoration: none;">
+                    <span class="font-mono text-sm">✈</span>
+                    <span class="text-sm tracking-[0.2em] uppercase font-mono">@benchforme</span>
+                </a>
+                <div class="flex flex-col gap-4">
+                    <div id="difficulty-filters" class="flex flex-wrap gap-2"></div>
+                    <div id="prompt-filters" class="flex flex-wrap gap-2"></div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <div id="top-filters" class="flex flex-wrap gap-2"></div>
+                        <div class="relative">
+                            <input id="model-search" type="text" placeholder="Поиск модели..." class="bg-surface border border-border px-3 py-1.5 text-xs text-white placeholder-white/20 outline-none focus:border-white/50 transition-colors font-mono tracking-wider w-40">
+                            <button id="model-search-clear" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/80 transition-colors font-mono text-xs" aria-label="Очистить">
+                                [×]
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="prompt-display" class="mb-8 hidden">
+            <div class="matte-card p-6 border border-border">
+                <p class="text-xs uppercase tracking-[0.2em] opacity-20 mb-3">Промпт</p>
+                <div class="relative">
+                    <p id="prompt-text" class="text-sm opacity-40 leading-relaxed" style="white-space: pre-wrap;"></p>
+                    <div id="prompt-text-fade" class="hidden absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-surface to-transparent pointer-events-none"></div>
+                    <button id="prompt-expand-btn" class="hidden text-xs uppercase tracking-widest opacity-30 hover:opacity-100 transition-opacity mt-2 border border-white/15 px-3 py-1.5 bg-white/5 hover:bg-white/10">Открыть полностью</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="benchmark-list" class="flex flex-col gap-8"></div>
+
+        <div id="loading-state" class="flex flex-col gap-6 py-8">
+            <div class="skeleton-card matte-card p-8 border border-border">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <div class="w-full lg:w-[28%]"><div class="skeleton-line w-16 h-3 mb-3"></div><div class="skeleton-line w-3/4 h-8 mb-2"></div><div class="skeleton-line w-1/2 h-4"></div></div>
+                    <div class="w-full lg:flex-1"><div class="skeleton-line w-full h-5 mb-4"></div><div class="skeleton-line w-full h-5 mb-4"></div><div class="skeleton-line w-3/4 h-5"></div></div>
+                </div>
+            </div>
+            <div class="skeleton-card matte-card p-8 border border-border">
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <div class="w-full lg:w-[28%]"><div class="skeleton-line w-16 h-3 mb-3"></div><div class="skeleton-line w-2/3 h-8 mb-2"></div><div class="skeleton-line w-1/3 h-4"></div></div>
+                    <div class="w-full lg:flex-1"><div class="skeleton-line w-full h-5 mb-4"></div><div class="skeleton-line w-full h-5 mb-4"></div><div class="skeleton-line w-2/3 h-5"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-state" class="error-state hidden">
+            <p id="error-state-text">Не удалось загрузить данные</p>
+            <button id="error-retry-btn" class="mt-4 text-xs uppercase tracking-widest border border-white/15 px-4 py-2 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">Повторить</button>
+        </div>
+
+        <div id="empty-state" class="empty-state hidden">Выберите промпт</div>
+
+        <div id="no-results-state" class="empty-state hidden">Ничего не найдено</div>
+
+    </main>
+
+    <script src="js/config.js?v=5"></script>
+    <script src="js/api.js?v=5"></script>
+    <script src="js/leaderboard.js?v=48"></script>
+    <script src="js/main.js?v=5"></script>
+    <script type="module">
+        import { animate, stagger } from "https://esm.sh/framer-motion";
+
+        const canvas = document.getElementById('ascii-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, columns, rows;
+        const isMobile = window.innerWidth < 768;
+        const fontSize = isMobile ? 24 : 15;
+        const chars = " .:-=+*#%@".split("");
+        let pageHidden = false;
+        document.addEventListener('visibilitychange', () => { pageHidden = document.hidden; });
+
+        function init() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            columns = Math.ceil(width / fontSize);
+            rows = Math.ceil(height / fontSize);
+        }
+
+        let mouse = { x: -1000, y: -1000 };
+        const trail = [];
+        const TRAIL_MAX_AGE = 2000;
+        const TRAIL_RADIUS = 130;
+        const TRAIL_SAMPLE_DIST = 10;
+
+        function pushTrail(px, py) {
+            const last = trail[trail.length - 1];
+            if (!last || Math.hypot(px - last.x, py - last.y) > TRAIL_SAMPLE_DIST) {
+                trail.push({ x: px, y: py, t: performance.now() });
+            }
+        }
+        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; pushTrail(e.clientX, e.clientY); });
+        window.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) { mouse.x = t.clientX; mouse.y = t.clientY; pushTrail(t.clientX, t.clientY); } }, { passive: true });
+        window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
+
+        let rafId;
+        function drawASCII(time) {
+            if (pageHidden) { rafId = requestAnimationFrame(drawASCII); return; }
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, width, height);
+            ctx.font = fontSize + 'px "Geist Mono"';
+            ctx.textAlign = 'center';
+
+            const now = performance.now();
+            while (trail.length > 0 && now - trail[0].t > TRAIL_MAX_AGE) trail.shift();
+
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < columns; x++) {
+                    const charX = x * fontSize;
+                    const charY = y * fontSize;
+                    const dist = Math.hypot(charX - mouse.x, charY - mouse.y);
+                    const mouseEffect = Math.max(0, 1 - dist / 400);
+
+                    let trailEffect = 0;
+                    for (let i = trail.length - 1; i >= 0; i--) {
+                        const p = trail[i];
+                        const dx = charX - p.x, dy = charY - p.y;
+                        if (dx > TRAIL_RADIUS || dx < -TRAIL_RADIUS || dy > TRAIL_RADIUS || dy < -TRAIL_RADIUS) continue;
+                        const d = Math.sqrt(dx * dx + dy * dy);
+                        if (d < TRAIL_RADIUS) {
+                            const spatial = 1 - d / TRAIL_RADIUS;
+                            const temporal = 1 - (now - p.t) / TRAIL_MAX_AGE;
+                            const e = spatial * spatial * temporal;
+                            if (e > trailEffect) trailEffect = e;
+                        }
+                    }
+
+                    const noise = Math.sin(x * 0.3 + time * 0.0005) * Math.cos(y * 0.3 + time * 0.0005);
+                    const combined = mouseEffect * 0.7 + trailEffect * 0.55;
+                    const brightness = Math.min(chars.length - 1, Math.floor((noise * 0.5 + 0.5 + combined) * chars.length));
+                    ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + mouseEffect * 0.12 + trailEffect * 0.1})`;
+                    ctx.fillText(chars[brightness], charX, charY);
+                }
+            }
+            rafId = requestAnimationFrame(drawASCII);
+        }
+        init();
+        window.addEventListener('resize', init);
+        rafId = requestAnimationFrame(drawASCII);
+    </script>
+</body>
+</html>
