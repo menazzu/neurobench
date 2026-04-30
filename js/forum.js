@@ -94,16 +94,6 @@ const ForumModule = (() => {
         return id;
     }
 
-    function showModal() {
-        const overlay = document.getElementById('forum-modal-overlay');
-        if (overlay) { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
-    }
-
-    function hideModal() {
-        const overlay = document.getElementById('forum-modal-overlay');
-        if (overlay) { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }
-    }
-
     // ========== ROUTING ==========
 
     function route() {
@@ -178,7 +168,7 @@ const ForumModule = (() => {
             main.innerHTML = `
                 <div class="forum-header">
                     <div class="forum-header-top">
-                        <h2 class="font-title text-3xl md:text-4xl uppercase tracking-widest text-shiny border-b border-border pb-4">Форум</h2>
+                        <h2 class="font-title text-2xl md:text-3xl uppercase tracking-widest text-shiny">Форум</h2>
                         ${newThreadBtn}
                     </div>
                     <div class="forum-categories">
@@ -521,18 +511,18 @@ const ForumModule = (() => {
                 <button id="btn-cancel-modal" class="forum-cancel-btn">Отмена</button>
             </div>
         `;
-        showModal();
+        overlay.classList.remove('hidden');
 
         document.getElementById('btn-save-edit-post').addEventListener('click', async () => {
             const content = document.getElementById('edit-post-content').value.trim();
             if (!content) return;
             try {
                 await Api.updateForumPost(postId, content);
-                hideModal();
+                overlay.classList.add('hidden');
                 await renderThreadDetail();
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
-        document.getElementById('btn-cancel-modal').addEventListener('click', hideModal);
+        document.getElementById('btn-cancel-modal').addEventListener('click', () => overlay.classList.add('hidden'));
     }
 
     // ========== EDIT THREAD MODAL ==========
@@ -551,7 +541,7 @@ const ForumModule = (() => {
                 <button id="btn-cancel-modal" class="forum-cancel-btn">Отмена</button>
             </div>
         `;
-        showModal();
+        overlay.classList.remove('hidden');
 
         document.getElementById('btn-save-edit-thread').addEventListener('click', async () => {
             const title = document.getElementById('edit-thread-title').value.trim();
@@ -559,11 +549,11 @@ const ForumModule = (() => {
             if (!title || !content) return;
             try {
                 await Api.updateForumThread(currentThreadId, title, content);
-                hideModal();
+                overlay.classList.add('hidden');
                 await renderThreadDetail();
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
-        document.getElementById('btn-cancel-modal').addEventListener('click', hideModal);
+        document.getElementById('btn-cancel-modal').addEventListener('click', () => overlay.classList.add('hidden'));
     }
 
     // ========== DELETE POST ==========
@@ -624,7 +614,7 @@ const ForumModule = (() => {
                 <button id="btn-cancel-modal" class="forum-cancel-btn">Закрыть</button>
             </div>
         `;
-        showModal();
+        overlay.classList.remove('hidden');
 
         function calcExpiry(val) {
             if (val === 'perm') return null;
@@ -640,7 +630,7 @@ const ForumModule = (() => {
                 const r = await Api.modMuteUser(userId, reason, calcExpiry(duration));
                 if (!r) { alert('Не удалось заглушить'); return; }
                 alert('Пользователь заглушен');
-                hideModal();
+                overlay.classList.add('hidden');
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
 
@@ -652,7 +642,7 @@ const ForumModule = (() => {
                 const r = await Api.modBanUser(userId, reason, calcExpiry(duration));
                 if (!r) { alert('Не удалось заблокировать'); return; }
                 alert('Пользователь заблокирован');
-                hideModal();
+                overlay.classList.add('hidden');
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
 
@@ -660,7 +650,7 @@ const ForumModule = (() => {
             try {
                 await Api.modUnmuteUser(userId);
                 alert('Мут снят');
-                hideModal();
+                overlay.classList.add('hidden');
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
 
@@ -668,11 +658,11 @@ const ForumModule = (() => {
             try {
                 await Api.modUnbanUser(userId);
                 alert('Бан снят');
-                hideModal();
+                overlay.classList.add('hidden');
             } catch (err) { alert('Ошибка: ' + err.message); }
         });
 
-        document.getElementById('btn-cancel-modal').addEventListener('click', hideModal);
+        document.getElementById('btn-cancel-modal').addEventListener('click', () => overlay.classList.add('hidden'));
     }
 
     // ========== NEW THREAD FORM ==========
@@ -692,7 +682,7 @@ const ForumModule = (() => {
         main.innerHTML = `
             <div class="forum-breadcrumb"><a href="#/">Форум</a> &rsaquo; Новый тред</div>
             <div class="forum-new-thread-form">
-                <h2 class="font-title text-2xl md:text-3xl uppercase tracking-widest text-shiny border-b border-border pb-4 mb-6">Новый тред</h2>
+                <h2 class="font-title text-xl uppercase tracking-widest text-shiny mb-6">Новый тред</h2>
                 <label class="forum-form-label">
                     Категория
                     <select id="new-thread-category" class="forum-select">
@@ -772,7 +762,7 @@ const ForumModule = (() => {
         const overlay = document.getElementById('forum-modal-overlay');
         if (overlay) {
             overlay.addEventListener('click', (e) => {
-                if (e.target.id === 'forum-modal-overlay') hideModal();
+                if (e.target.id === 'forum-modal-overlay') overlay.classList.add('hidden');
             });
         }
     }
