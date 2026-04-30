@@ -8,28 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/tailwind.css">
     <link rel="icon" type="image/png" href="logo2.png">
     <link rel="stylesheet" href="css/style.css?v=24">
     <script src="js/title-scramble.js?v=7" data-title="Voxel Bench" defer></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        black: '#050505',
-                        surface: '#0c0c0c',
-                        border: '#161616',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['"Geist Mono"', 'monospace'],
-                        title: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
 </head>
 <body class="bg-[#050505] text-white antialiased overflow-x-hidden">
     <canvas id="ascii-canvas" class="ascii-bg"></canvas>
@@ -59,42 +41,54 @@
     <script type="module">
         const canvas = document.getElementById('ascii-canvas');
         const ctx = canvas.getContext('2d');
-        let width, height, columns, rows;
-        const fontSize = window.innerWidth < 768 ? 24 : 15;
-        const chars = " .:-=+*#%@".split("");
+        const isMobile = window.innerWidth < 768;
 
-        function init() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            columns = Math.ceil(width / fontSize);
-            rows = Math.ceil(height / fontSize);
-        }
+        if (isMobile) {
+            canvas.style.display = 'none';
+        } else {
+            let width, height, columns, rows;
+            const fontSize = 15;
+            const chars = " .:-=+*#%@".split("");
 
-        let mouse = { x: -1000, y: -1000 };
-        window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
-
-        function drawASCII(time) {
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, width, height);
-            ctx.font = fontSize + 'px "Geist Mono"';
-            ctx.textAlign = 'center';
-            for (let y = 0; y < rows; y++) {
-                for (let x = 0; x < columns; x++) {
-                    const charX = x * fontSize;
-                    const charY = y * fontSize;
-                    const dist = Math.hypot(charX - mouse.x, charY - mouse.y);
-                    const mouseEffect = Math.max(0, 1 - dist / 400);
-                    const noise = Math.sin(x * 0.3 + time * 0.0005) * Math.cos(y * 0.3 + time * 0.0005);
-                    const brightness = Math.min(chars.length - 1, Math.floor((noise * 0.5 + 0.5 + mouseEffect * 0.7) * chars.length));
-                    ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + mouseEffect * 0.12})`;
-                    ctx.fillText(chars[brightness], charX, charY);
-                }
+            function init() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                columns = Math.ceil(width / fontSize);
+                rows = Math.ceil(height / fontSize);
             }
-            requestAnimationFrame(drawASCII);
+
+            let mouse = { x: -1000, y: -1000 };
+            window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+            let rafId;
+            let lastFrame = 0;
+            const FRAME_INTERVAL = 1000 / 30;
+            function drawASCII(time) {
+                const delta = time - lastFrame;
+                if (delta < FRAME_INTERVAL) { rafId = requestAnimationFrame(drawASCII); return; }
+                lastFrame = time - (delta % FRAME_INTERVAL);
+                ctx.fillStyle = '#050505';
+                ctx.fillRect(0, 0, width, height);
+                ctx.font = fontSize + 'px "Geist Mono"';
+                ctx.textAlign = 'center';
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < columns; x++) {
+                        const charX = x * fontSize;
+                        const charY = y * fontSize;
+                        const dist = Math.hypot(charX - mouse.x, charY - mouse.y);
+                        const mouseEffect = Math.max(0, 1 - dist / 400);
+                        const noise = Math.sin(x * 0.3 + time * 0.0005) * Math.cos(y * 0.3 + time * 0.0005);
+                        const brightness = Math.min(chars.length - 1, Math.floor((noise * 0.5 + 0.5 + mouseEffect * 0.7) * chars.length));
+                        ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + mouseEffect * 0.12})`;
+                        ctx.fillText(chars[brightness], charX, charY);
+                    }
+                }
+                rafId = requestAnimationFrame(drawASCII);
+            }
+            init();
+            window.addEventListener('resize', init);
+            rafId = requestAnimationFrame(drawASCII);
         }
-        init();
-        window.addEventListener('resize', init);
-        requestAnimationFrame(drawASCII);
     </script>
 </body>
 </html>

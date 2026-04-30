@@ -8,32 +8,13 @@
     <meta name="description" content="NeuroBench — SVG бенчмарк для оценки визуального интеллекта ИИ.">
     <link rel="icon" type="image/png" href="logo2.png">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <link rel="stylesheet" href="css/tailwind.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        black: '#050505',
-                        surface: '#0c0c0c',
-                        border: '#161616',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['"Geist Mono"', 'monospace'],
-                        title: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
 
     <link rel="stylesheet" href="css/style.css?v=24">
     <script src="js/title-scramble.js?v=7" data-title="SVG Bench" defer></script>
@@ -150,8 +131,7 @@
     <script src="js/api.js?v=5"></script>
     <script src="js/leaderboard.js?v=48"></script>
     <script src="js/main.js?v=5"></script>
-    <script type="module">
-        import { animate, stagger } from "https://esm.sh/framer-motion";
+    <script>
 
         const canvas = document.getElementById('ascii-canvas');
         const ctx = canvas.getContext('2d');
@@ -185,50 +165,59 @@
         window.addEventListener('touchmove', e => { const t = e.touches[0]; if (t) { mouse.x = t.clientX; mouse.y = t.clientY; pushTrail(t.clientX, t.clientY); } }, { passive: true });
         window.addEventListener('touchend', () => { mouse.x = -1000; mouse.y = -1000; });
 
-        let rafId;
-        function drawASCII(time) {
-            if (pageHidden) { rafId = requestAnimationFrame(drawASCII); return; }
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, width, height);
-            ctx.font = fontSize + 'px "Geist Mono"';
-            ctx.textAlign = 'center';
+        if (isMobile) {
+            canvas.style.display = 'none';
+        } else {
+            let rafId;
+            let lastFrame = 0;
+            const FRAME_INTERVAL = 1000 / 30;
+            function drawASCII(time) {
+                if (pageHidden) { rafId = requestAnimationFrame(drawASCII); return; }
+                const delta = time - lastFrame;
+                if (delta < FRAME_INTERVAL) { rafId = requestAnimationFrame(drawASCII); return; }
+                lastFrame = time - (delta % FRAME_INTERVAL);
+                ctx.fillStyle = '#050505';
+                ctx.fillRect(0, 0, width, height);
+                ctx.font = fontSize + 'px "Geist Mono"';
+                ctx.textAlign = 'center';
 
-            const now = performance.now();
-            while (trail.length > 0 && now - trail[0].t > TRAIL_MAX_AGE) trail.shift();
+                const now = performance.now();
+                while (trail.length > 0 && now - trail[0].t > TRAIL_MAX_AGE) trail.shift();
 
-            for (let y = 0; y < rows; y++) {
-                for (let x = 0; x < columns; x++) {
-                    const charX = x * fontSize;
-                    const charY = y * fontSize;
-                    const dist = Math.hypot(charX - mouse.x, charY - mouse.y);
-                    const mouseEffect = Math.max(0, 1 - dist / 400);
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < columns; x++) {
+                        const charX = x * fontSize;
+                        const charY = y * fontSize;
+                        const dist = Math.hypot(charX - mouse.x, charY - mouse.y);
+                        const mouseEffect = Math.max(0, 1 - dist / 400);
 
-                    let trailEffect = 0;
-                    for (let i = trail.length - 1; i >= 0; i--) {
-                        const p = trail[i];
-                        const dx = charX - p.x, dy = charY - p.y;
-                        if (dx > TRAIL_RADIUS || dx < -TRAIL_RADIUS || dy > TRAIL_RADIUS || dy < -TRAIL_RADIUS) continue;
-                        const d = Math.sqrt(dx * dx + dy * dy);
-                        if (d < TRAIL_RADIUS) {
-                            const spatial = 1 - d / TRAIL_RADIUS;
-                            const temporal = 1 - (now - p.t) / TRAIL_MAX_AGE;
-                            const e = spatial * spatial * temporal;
-                            if (e > trailEffect) trailEffect = e;
+                        let trailEffect = 0;
+                        for (let i = trail.length - 1; i >= 0; i--) {
+                            const p = trail[i];
+                            const dx = charX - p.x, dy = charY - p.y;
+                            if (dx > TRAIL_RADIUS || dx < -TRAIL_RADIUS || dy > TRAIL_RADIUS || dy < -TRAIL_RADIUS) continue;
+                            const d = Math.sqrt(dx * dx + dy * dy);
+                            if (d < TRAIL_RADIUS) {
+                                const spatial = 1 - d / TRAIL_RADIUS;
+                                const temporal = 1 - (now - p.t) / TRAIL_MAX_AGE;
+                                const e = spatial * spatial * temporal;
+                                if (e > trailEffect) trailEffect = e;
+                            }
                         }
-                    }
 
-                    const noise = Math.sin(x * 0.3 + time * 0.0005) * Math.cos(y * 0.3 + time * 0.0005);
-                    const combined = mouseEffect * 0.7 + trailEffect * 0.55;
-                    const brightness = Math.min(chars.length - 1, Math.floor((noise * 0.5 + 0.5 + combined) * chars.length));
-                    ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + mouseEffect * 0.12 + trailEffect * 0.1})`;
-                    ctx.fillText(chars[brightness], charX, charY);
+                        const noise = Math.sin(x * 0.3 + time * 0.0005) * Math.cos(y * 0.3 + time * 0.0005);
+                        const combined = mouseEffect * 0.7 + trailEffect * 0.55;
+                        const brightness = Math.min(chars.length - 1, Math.floor((noise * 0.5 + 0.5 + combined) * chars.length));
+                        ctx.fillStyle = `rgba(255, 255, 255, ${0.03 + mouseEffect * 0.12 + trailEffect * 0.1})`;
+                        ctx.fillText(chars[brightness], charX, charY);
+                    }
                 }
+                rafId = requestAnimationFrame(drawASCII);
             }
+            init();
+            window.addEventListener('resize', init);
             rafId = requestAnimationFrame(drawASCII);
         }
-        init();
-        window.addEventListener('resize', init);
-        rafId = requestAnimationFrame(drawASCII);
     </script>
 </body>
 </html>

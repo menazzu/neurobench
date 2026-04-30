@@ -217,9 +217,20 @@ const Api = (() => {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
         const { data, error } = await client.from('results')
-            .select('*, models(id, name), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
+            .select('id, overall, s_visual, s_animation, s_creative, s_code, s_detail, test_date, author, prompt_id, model_id, model_space_id, svg_content, models(id, name), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
             .eq('prompt_id', promptId)
             .order('overall', { ascending: false });
+        if (error) throw error;
+        return data;
+    }
+
+    async function getResultSvg(resultId) {
+        const client = getClient();
+        if (!client) throw new Error('Supabase not configured');
+        const { data, error } = await client.from('results')
+            .select('id, svg_content')
+            .eq('id', resultId)
+            .single();
         if (error) throw error;
         return data;
     }
@@ -228,7 +239,7 @@ const Api = (() => {
         const client = getClient();
         if (!client) throw new Error('Supabase not configured');
         const { data, error } = await client.from('results')
-            .select('*, models(id, name), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
+            .select('id, overall, s_visual, s_animation, s_creative, s_code, s_detail, test_date, author, prompt_id, model_id, model_space_id, svg_content, models(id, name), model_spaces(id, name, url), prompts(id, difficulty, text, name), result_param_values(id, param_value_id, model_param_values(id, value, param_id, model_params(id, name, model_id)))')
             .order('prompt_id')
             .order('overall', { ascending: false });
         if (error) throw error;
@@ -764,7 +775,7 @@ const Api = (() => {
         getModelSpaces, getAllModelSpaces, addModelSpace, updateModelSpace, deleteModelSpace,
         getModelParams, getAllModelParams, addModelParam, updateModelParam, deleteModelParam,
         addModelParamValue, updateModelParamValue, deleteModelParamValue,
-        getResultsByPrompt, getAllResults, addResult, updateResult, deleteResult,
+        getResultsByPrompt, getAllResults, getResultSvg, addResult, updateResult, deleteResult,
         setResultParamValues, getResultParamValues,
         login, logout, getSession, isAdmin, isModeratorCheck, reinit, reinitAdmin, getClient,
         telegramAuth, setSession,

@@ -10,7 +10,6 @@ const LeaderboardModule = (() => {
     let currentSort = 'score';
     let resultsData = [];
     let allModelsCount = 0;
-    let activeMessageHandlers = [];
     let searchQuery = '';
     let barObserver = null;
     let pendingTimeouts = [];
@@ -236,11 +235,10 @@ const LeaderboardModule = (() => {
     function renderSvgBlock(result) {
         if (!result.svg_content) return '';
         const modelSlug = (result.models ? result.models.name : 'model').replace(/[^a-zA-Z0-9]/g, '_');
-        const svgId = 'svg-preview-' + result.id + '-' + Math.random().toString(36).slice(2, 8);
         return `
             <div class="mt-4 w-full">
                 <div class="svg-viewer-box border border-border overflow-hidden" style="max-width:220px;width:100%;aspect-ratio:1/1;">
-                    <iframe id="${svgId}" class="svg-iframe" srcdoc="" style="width:100%;height:100%;border:none;background:transparent;"></iframe>
+                    <div class="svg-placeholder" data-result-id="${result.id}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:rgba(255,255,255,0.15);font-family:'Geist Mono',monospace;letter-spacing:0.1em;">LOADING</div>
                 </div>
                 <button class="svg-download-btn text-[9px] uppercase tracking-widest border border-white/15 px-2 py-1.5 bg-white/5 hover:bg-white/10 transition-colors flex items-center gap-1.5 cursor-pointer mt-2"
                     data-model-slug="${escapeHtml(modelSlug)}">
@@ -312,8 +310,6 @@ const LeaderboardModule = (() => {
 
     function renderBenchmarkList() {
         const listContainer = document.getElementById('benchmark-list');
-        activeMessageHandlers.forEach(h => window.removeEventListener('message', h));
-        activeMessageHandlers = [];
         pendingTimeouts.forEach(t => clearTimeout(t));
         pendingTimeouts = [];
         listContainer.innerHTML = '';
@@ -404,23 +400,6 @@ const LeaderboardModule = (() => {
             `;
 
             if (result.svg_content) {
-                const sanitized = sanitizeSvg(result.svg_content);
-                const svgIframe = card.querySelector('.svg-iframe');
-                if (svgIframe) {
-                    const iframeSrc = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{margin:0;padding:0;box-sizing:border-box}body{background:transparent;display:flex;align-items:center;justify-content:center;width:100%;height:100%;overflow:hidden;cursor:pointer}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body onclick="parent.postMessage({type:'svg-open',id:'${svgIframe.id}'},'*')">${sanitized}</body></html>`;
-                    svgIframe.srcdoc = iframeSrc;
-                    const handler = (e) => {
-                        if (e.data && e.data.type === 'svg-open' && e.data.id === svgIframe.id) {
-                            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
-                            const blob = new Blob([html], { type: 'text/html' });
-                            const url = URL.createObjectURL(blob);
-                            window.open(url, '_blank');
-                            URL.revokeObjectURL(url);
-                        }
-                    };
-                    window.addEventListener('message', handler);
-                    activeMessageHandlers.push(handler);
-                }
                 const downloadBtn = card.querySelector('.svg-download-btn');
                 if (downloadBtn) {
                     downloadBtn.addEventListener('click', (e) => {
@@ -456,6 +435,29 @@ const LeaderboardModule = (() => {
                         if (scoreEl && !scoreEl._counted) {
                             scoreEl._counted = true;
                             countUpScore(scoreEl, parseFloat(scoreEl.dataset.raw) || 0);
+                        }
+                        const svgPlaceholder = entry.target.querySelector('.svg-placeholder');
+                        if (svgPlaceholder && !svgPlaceholder._loaded) {
+                            svgPlaceholder._loaded = true;
+                            const rid = parseInt(svgPlaceholder.dataset.resultId);
+                            const r = resultsData.find(x => x.id === rid);
+                            if (r && r.svg_content) {
+                                const sanitized = sanitizeSvg(r.svg_content);
+                                const dataUri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sanitized);
+                                const img = document.createElement('img');
+                                img.src = dataUri;
+                                img.alt = 'SVG preview';
+                                img.className = 'svg-img';
+                                img.style.cssText = 'width:100%;height:100%;object-fit:contain;cursor:pointer;background:transparent;';
+                                img.addEventListener('click', () => {
+                                    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>SVG Preview</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;display:flex;align-items:center;justify-content:center;min-height:100vh}svg{max-width:95vw;max-height:95vh;width:auto;height:auto}</style></head><body>${sanitized}</body></html>`;
+                                    const blob = new Blob([html], { type: 'text/html' });
+                                    const url = URL.createObjectURL(blob);
+                                    window.open(url, '_blank');
+                                    URL.revokeObjectURL(url);
+                                });
+                                svgPlaceholder.replaceWith(img);
+                            }
                         }
                     }, delay);
                     pendingTimeouts.push(timeoutId);

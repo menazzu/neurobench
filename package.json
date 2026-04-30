@@ -1,0 +1,11 @@
+{
+  "name": "neurobench",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i css/tailwind-input.css -o css/tailwind.css --minify",
+    "build": "npm run build:css"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3"
+  }
+}
